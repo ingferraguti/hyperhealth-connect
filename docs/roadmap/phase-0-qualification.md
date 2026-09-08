@@ -13,14 +13,14 @@ La Engineering Foundation R0.1 soddisfa gli exit criteria repository-level della
 |---|---|---|
 | inventario e governance | PASS | CODEOWNERS, branch policy, PR template, operating model |
 | ADR fondativi | PASS | ADR-001–ADR-010 `Accepted` |
-| ownership dipendenze | PASS | 8 dipendenze critiche con lifecycle, security e license owner |
+| ownership dipendenze | PASS | 9 dipendenze critiche con lifecycle, security e license owner |
 | security-first | PASS | `security-core` prima dei feature module; tenant/redaction test verdi |
 | build e convergenza | PASS | reactor 7 moduli; Maven Enforcer verde |
 | test | PASS | 10 eseguiti, 0 failure, 0 error, 0 skipped |
 | SAST | PASS | SpotBugs + FindSecBugs, 0 finding medium-or-higher |
 | SBOM | PASS | CycloneDX 1.6, 122 componenti aggregati |
 | firma locale | PASS | JAR copiato, firmato EC e verificato; chiave privata effimera eliminata |
-| provenance CI | READY | keyless Cosign e GitHub build attestation sul branch protetto |
+| provenance CI | PASS | firma keyless Cosign e GitHub build attestation sul branch `main` ospitato |
 | environment | PASS | Compose valido; overlay dev/integration/conformance/performance renderizzati |
 | container baseline | PASS | base Jammy multi-arch per digest, UID 10001, filesystem read-only; readiness smoke su entrambe le immagini |
 | assurance | PASS | threat model, privacy review, hazard log, BIA, audit schema |
@@ -28,16 +28,16 @@ La Engineering Foundation R0.1 soddisfa gli exit criteria repository-level della
 
 ## Digest dell’esecuzione
 
-- Control plane JAR SHA-256: `99ef1c6a70b65a47abb697ea399fdc80db9b8d39523b78d4b4ca5e69c545442b`.
-- Runtime worker JAR SHA-256: `daaabe104c7907eca123e081f32d596c9716af0ca9e40d7b8f36c18ef4b11fe3`.
-- SBOM aggregata SHA-256: `144688e0048777b88382110b76ea5f5db3af8764d28faa8b2b03337ab5bc0b99`.
+- Control plane JAR SHA-256: `cf7c340bec5147bfd34d9aee972407de9f4e57b618233592e27b8796b544fbf3`.
+- Runtime worker JAR SHA-256: `cc696a64e75852783b635fdf60232fdcc207bbab14f8583e95794c235741eb4e`.
+- SBOM aggregata SHA-256: `70b09ccf09a1f475e7a3c98a548debc17a6862a0d52d88259b1f16cf8bf79001`.
 - Prova riproducibilità Integration Envelope, due build isolate: `0228eedcd37d4556ee910760ed96c140d2a85dbdeb75d5bc97171b7602490c33`, identiche byte-for-byte.
 
 I digest sono riferiti all’esecuzione locale sopra indicata e cambiano a ogni modifica intenzionale. Il report machine-readable effimero è `target/phase0-evidence/qualification-report.json`; viene rigenerato dal gate, non versionato.
 
 ## Eccezioni e limiti dichiarati
 
-Non esiste ancora un remote Git configurato: la regola server-side di branch protection non può essere applicata o provata sulla workstation. Il file `.github/branch-protection.yml` è la policy canonica da importare nel forge; fino ad allora la protezione è dichiarativa. Analogamente, firma keyless e attestazione OIDC richiedono l’esecuzione sul branch `main` ospitato. Il gate locale dimostra firma e verifica senza conservare chiavi.
+Il repository pubblico canonico è ospitato su GitHub e la policy server-side di `main` è allineata a `.github/branch-protection.yml`. Firma keyless e attestazione OIDC sono prodotte esclusivamente dal workflow ospitato; il gate locale verifica separatamente una firma effimera senza conservare la chiave privata.
 
 Le warning del validatore CycloneDX riguardano keyword meta-schema annotate dalla libreria di validazione; la BOM 1.6 è stata generata e validata. Le warning Mockito/JDK provengono dal test starter e non indicano failure; verranno eliminate prima del passaggio alla futura policy JDK che impedirà il dynamic attach.
 

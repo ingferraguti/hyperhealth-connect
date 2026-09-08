@@ -1,5 +1,5 @@
 schemaVersion: 1
-reviewedAt: 2026-09-07
+reviewedAt: 2026-09-08
 policy: docs/development/dependency-and-license-policy.md
 dependencies:
   - id: temurin-jdk
@@ -28,6 +28,16 @@ dependencies:
     lifecycleOwner: platform-engineering
     securityOwner: product-security
     licenseOwner: legal-open-source-office
+    updateCadence: monthly-and-critical-cve
+  - id: apache-tomcat-embed
+    version: "11.0.25"
+    purpose: embedded HTTP and Servlet runtime for control plane and workers
+    source: https://tomcat.apache.org/security-11
+    license: Apache-2.0
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: fixes-CVE-2026-65182-CVE-2026-65905-CVE-2026-68525-and-other-11.0.24-findings
     updateCadence: monthly-and-critical-cve
   - id: apache-camel
     version: "4.22.0"
