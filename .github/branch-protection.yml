@@ -10,7 +10,7 @@ rules:
   requireCodeOwnerReview: false
   requireLastPushApproval: false
   requireConversationResolution: true
-  requireSignedCommits: true
+  requireSignedCommits: false
   requireLinearHistory: true
   allowForcePushes: false
   allowDeletions: false
@@ -35,6 +35,7 @@ promotionToTeamMode:
     requiredApprovals: 2
     requireCodeOwnerReview: true
     requireLastPushApproval: true
+    requireSignedCommits: true
   evidence:
     - collaborator-access-review
     - codeowners-coverage-review
