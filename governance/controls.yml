@@ -1,0 +1,64 @@
+schemaVersion: 1
+reviewedAt: 2026-09-07
+controls:
+  - id: CTRL-TENANT-001
+    objective: deny cross-tenant and cross-facility access by construction
+    owner: product-security
+    automation: unit-test
+    frequency: every-change
+  - id: CTRL-DATA-001
+    objective: permit only deterministic synthetic clinical fixtures in source control
+    owner: quality-engineering
+    automation: repository-scan
+    frequency: every-change
+  - id: CTRL-LOG-001
+    objective: exclude PHI, credentials and payload bodies from logs and audit metadata
+    owner: observability
+    automation: redaction-test
+    frequency: every-change
+  - id: CTRL-SECRET-001
+    objective: block committed credentials and high-confidence secrets
+    owner: product-security
+    automation: gitleaks
+    frequency: every-change-and-weekly-full-history
+  - id: CTRL-SBOM-001
+    objective: emit a CycloneDX 1.6 SBOM for every release candidate
+    owner: release-engineering
+    automation: maven-verify
+    frequency: every-build
+  - id: CTRL-SIGN-001
+    objective: bind artifact digest, provenance and build identity cryptographically
+    owner: release-engineering
+    automation: keyless-cosign-and-github-attestation
+    frequency: protected-branch-build
+  - id: CTRL-SCA-001
+    objective: reject exploitable critical dependencies or prohibited licenses
+    owner: product-security
+    automation: dependency-review-and-trivy
+    frequency: pull-request-and-nightly
+  - id: CTRL-BC-001
+    objective: keep Tier-0 ingestion safe during control-plane unavailability
+    owner: sre
+    automation: architecture-gate
+    frequency: release
+  - id: CTRL-RESTORE-001
+    objective: prove restoration meets the declared RTO and RPO
+    owner: sre
+    automation: restore-drill
+    frequency: quarterly-and-before-production
+  - id: CTRL-SEM-001
+    objective: prevent clinically unsafe semantic releases
+    owner: clinical-safety-officer
+    automation: golden-corpus-plus-human-approval
+    frequency: semantic-release
+  - id: CTRL-TRACE-001
+    objective: preserve requirement-to-evidence and data lineage links
+    owner: quality-engineering
+    automation: phase0-gate
+    frequency: every-change
+  - id: CTRL-CONTRACT-001
+    objective: preserve connector API compatibility and deterministic identity
+    owner: integration-runtime
+    automation: contract-test
+    frequency: every-change
+

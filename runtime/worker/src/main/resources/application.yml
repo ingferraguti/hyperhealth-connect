@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: hhc-runtime-worker
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+camel:
+  main:
+    name: hhc-runtime-worker
+server:
+  port: 8081
+  shutdown: graceful

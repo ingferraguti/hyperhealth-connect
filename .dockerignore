@@ -1,0 +1,10 @@
+**
+!platform/
+!platform/control-plane/
+!platform/control-plane/target/
+!platform/control-plane/target/control-plane-0.1.0-SNAPSHOT.jar
+!runtime/
+!runtime/worker/
+!runtime/worker/target/
+!runtime/worker/target/runtime-worker-0.1.0-SNAPSHOT.jar
+

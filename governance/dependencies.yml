@@ -1,0 +1,78 @@
+schemaVersion: 1
+reviewedAt: 2026-09-07
+policy: docs/development/dependency-and-license-policy.md
+dependencies:
+  - id: temurin-jdk
+    version: "21.0.11+10"
+    purpose: compile and run Java services
+    source: https://github.com/adoptium/temurin21-binaries
+    license: GPL-2.0-with-classpath-exception
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    updateCadence: monthly-and-critical-cve
+  - id: apache-maven
+    version: "3.9.16"
+    purpose: reproducible build and dependency resolution
+    source: https://maven.apache.org/docs/history.html
+    license: Apache-2.0
+    lifecycleOwner: developer-experience
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    updateCadence: quarterly-and-critical-cve
+  - id: spring-boot
+    version: "4.1.1"
+    purpose: control-plane and worker application framework
+    source: https://github.com/spring-projects/spring-boot/releases/tag/v4.1.1
+    license: Apache-2.0
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    updateCadence: monthly-and-critical-cve
+  - id: apache-camel
+    version: "4.22.0"
+    purpose: integration runtime
+    source: https://camel.apache.org/releases/release-4.22.0/
+    license: Apache-2.0
+    lifecycleOwner: integration-runtime
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    supportClass: upstream-lts-through-2027-08
+    updateCadence: monthly-and-critical-cve
+  - id: spotbugs
+    version: "4.10.3.0"
+    purpose: Java static analysis
+    source: https://github.com/spotbugs/spotbugs-maven-plugin/releases/tag/spotbugs-maven-plugin-4.10.3.0
+    license: LGPL-2.1-or-later
+    lifecycleOwner: quality-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    distributionDecision: build-time-only
+  - id: findsecbugs
+    version: "1.14.0"
+    purpose: security rules for SpotBugs
+    source: https://github.com/find-sec-bugs/find-sec-bugs/releases/tag/version-1.14.0
+    license: LGPL-3.0
+    lifecycleOwner: product-security
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    distributionDecision: build-time-only
+  - id: cyclonedx-maven-plugin
+    version: "2.9.1"
+    purpose: CycloneDX SBOM generation
+    source: https://github.com/CycloneDX/cyclonedx-maven-plugin/releases/tag/cyclonedx-maven-plugin-2.9.1
+    license: Apache-2.0
+    lifecycleOwner: release-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    updateCadence: quarterly-and-critical-cve
+  - id: eclipse-temurin-runtime-image
+    version: "21.0.11_10-jre-jammy"
+    digest: sha256:8208b3a3733529f42c4b565bfcbf16d914eb628f3ead8488b6b4d6363fcbe7cf
+    purpose: production-compatible minimal runtime base
+    source: https://hub.docker.com/_/eclipse-temurin
+    license: mixed-see-image-sbom
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    updateCadence: monthly-and-critical-cve

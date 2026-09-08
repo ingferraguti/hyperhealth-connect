@@ -1,0 +1,708 @@
+Ho esplorato la documentazione OMOP/OHDSI partendo dal sito che hai indicato e seguendo i componenti tecnici collegati. Ne emerge una cosa interessante: **gran parte del motore che ci serve esiste già come insieme di librerie e specifiche**, ma è frammentato in progetti diversi. Il valore del nostro software potrebbe essere proprio unirli dietro un'architettura moderna, API coerenti e pipeline automatizzate.
+
+## 1. La scelta fondamentale: OMOP CDM 5.5
+
+Il sito OHDSI indica attualmente **OMOP CDM 5.5 come versione corrente**. La 6.0 esiste, ma OHDSI avverte esplicitamente che non è pienamente supportata dalla suite di strumenti; il cambiamento più problematico riguarda l'obbligatorietà dei `*_datetime`. 
+
+Per il nostro progetto userei quindi:
+
+**storage nativo OMOP CDM 5.5**, mantenendo compatibilità con il sottoinsieme 5.4 usato dagli strumenti OHDSI.
+
+Questa soluzione è particolarmente ragionevole perché il passaggio 5.4 → 5.5 aggiunge 7 campi e 3 tabelle, ma **non elimina né rinomina alcuna tabella o campo**. 
+
+Il caveat è che sul sito OHDSI diversi strumenti risultano compatibili con le funzionalità legacy della 5.5, ma non ancora pienamente con tutte le nuove feature della 5.5. 
+
+---
+
+# 2. La documentazione tecnica che userei come specifica del progetto
+
+| Area | Documento / progetto | Utilizzo nel nostro software |
+|---|---|---|
+| **Schema dati** | [OMOP CDM 5.5 Specification](https://ohdsi.github.io/CommonDataModel/cdm55.html?utm_source=chatgpt.com) | Specifica canonica di tabelle, campi, tipi, PK, FK, required e convenzioni ETL |
+| **Regole semantiche** | [Data Model Conventions](https://ohdsi.github.io/CommonDataModel/dataModelConventions.html?utm_source=chatgpt.com) | Regole fondamentali su domain, concept, source value, standard concept, provenance |
+| **Convenzioni ETL** | [THEMIS Convention Library](https://ohdsi.github.io/Themis/?utm_source=chatgpt.com) | Risolve i casi ambigui di trasformazione dei dati |
+| **DDL ufficiali** | [CommonDataModel GitHub](https://github.com/OHDSI/CommonDataModel?utm_source=chatgpt.com) | Creazione fisica DB, PK, FK, indici |
+| **SQL ETL** | [OMOP SQL Scripts](https://ohdsi.github.io/CommonDataModel/sqlScripts.html?utm_source=chatgpt.com) | Mapping vocabolari, eras, ETL di esempio |
+| **Vocabolari** | [Athena OHDSI](https://athena.ohdsi.org/?utm_source=chatgpt.com) | Download SNOMED/RxNorm/LOINC ecc. e mapping |
+| **Mapping custom** | [Custom Concepts](https://ohdsi.github.io/CommonDataModel/customConcepts.html?utm_source=chatgpt.com) | Codici locali ospedalieri non presenti in Athena |
+| **Mapping assistito** | [Usagi](https://ohdsi.github.io/Usagi/?utm_source=chatgpt.com) | Associazione codici locali → standard concepts |
+| **Analisi sorgente** | [WhiteRabbit / Rabbit-in-a-Hat](https://github.com/OHDSI/WhiteRabbit?utm_source=chatgpt.com) | Reverse engineering delle sorgenti e progettazione ETL |
+| **Quality engine** | [Data Quality Dashboard](https://github.com/OHDSI/DataQualityDashboard?utm_source=chatgpt.com) | Migliaia di controlli automatici OMOP |
+| **Profilazione DB** | [Achilles](https://ohdsi.github.io/Achilles/?utm_source=chatgpt.com) | Statistiche aggregate e caratterizzazione dell'intero CDM |
+| **SQL multi-database** | [SqlRender](https://ohdsi.github.io/SqlRender/?utm_source=chatgpt.com) | Un SQL logico tradotto in PostgreSQL, Oracle, Snowflake ecc. |
+| **DB abstraction** | [DatabaseConnector](https://ohdsi.github.io/DatabaseConnector/?utm_source=chatgpt.com) | Accesso uniforme ai vari DBMS |
+| **Cohort engine** | [CohortGenerator](https://ohdsi.github.io/CohortGenerator/?utm_source=chatgpt.com) | Materializzazione delle coorti |
+| **Cohort DSL** | [CirceR](https://ohdsi.github.io/CirceR/?utm_source=chatgpt.com) | Definizione JSON → SQL delle coorti |
+| **Feature engine** | [FeatureExtraction](https://ohdsi.github.io/FeatureExtraction/?utm_source=chatgpt.com) | Costruzione automatica di covariate/features |
+| **Cohort QA** | [CohortDiagnostics](https://ohdsi.github.io/CohortDiagnostics/?utm_source=chatgpt.com) | Validazione dei fenotipi/coorti |
+| **Analytics** | [HADES](https://ohdsi.github.io/Hades/?utm_source=chatgpt.com) | Suite scientifica OHDSI |
+| **Backend OHDSI** | [WebAPI](https://github.com/OHDSI/WebAPI?utm_source=chatgpt.com) | REST API e logica usata da ATLAS |
+| **UI di riferimento** | [ATLAS](https://github.com/OHDSI/Atlas?utm_source=chatgpt.com) | Concept search, coorti, analisi |
+| **FHIR ingestion** | [HL7 FHIR → OMOP Implementation Guide](https://build.fhir.org/ig/HL7/fhir-omop-ig/?utm_source=chatgpt.com) | Specifica per trasformare FHIR in OMOP |
+
+Questi componenti coprono praticamente l'intero percorso **source → ETL → OMOP → quality → cohort → feature → analytics**. 
+
+---
+
+# 3. Il modello dati che dobbiamo implementare
+
+OMOP 5.5 separa chiaramente le varie aree.
+
+### Dati clinici
+
+`PERSON`  
+`OBSERVATION_PERIOD`  
+`VISIT_OCCURRENCE`  
+`CONDITION_OCCURRENCE`  
+`DRUG_EXPOSURE`  
+`PROCEDURE_OCCURRENCE`  
+`DEVICE_EXPOSURE`  
+`MEASUREMENT`  
+`OBSERVATION`  
+`DEATH`  
+`NOTE`  
+`NOTE_NLP`  
+`SPECIMEN`  
+`FACT_RELATIONSHIP`
+
+### Organizzazione sanitaria
+
+`LOCATION`  
+`CARE_SITE`  
+`PROVIDER`
+
+### Economics
+
+`PAYER_PLAN_PERIOD`  
+`COST`
+
+### Dati derivati
+
+`DRUG_ERA`  
+`DOSE_ERA`  
+`CONDITION_ERA`  
+`EPISODE`  
+`EPISODE_EVENT`
+
+### Metadata
+
+`METADATA`  
+`CDM_SOURCE`
+
+### Vocabulary / ontologia
+
+`CONCEPT`  
+`VOCABULARY`  
+`DOMAIN`  
+`CONCEPT_CLASS`  
+`CONCEPT_RELATIONSHIP`  
+`RELATIONSHIP`  
+`CONCEPT_SYNONYM`  
+`CONCEPT_ANCESTOR`  
+`SOURCE_TO_CONCEPT_MAP`  
+`DRUG_STRENGTH`  
+`PACK_CONTENT`  
+`CONCEPT_METADATA`  
+`CONCEPT_RELATIONSHIP_METADATA`
+
+Più `COHORT` e `COHORT_DEFINITION`. 
+
+Un dettaglio importante: **OMOP richiede che tutte le tabelle previste esistano**, anche quando non sono popolate. 
+
+---
+
+# 4. Il cuore semantico non è lo schema: sono i Concept
+
+Qui sta probabilmente la parte più importante dell'intero progetto.
+
+Un record OMOP tende ad avere tre rappresentazioni:
+
+```text
+condition_source_value
+       ↓
+condition_source_concept_id
+       ↓
+condition_concept_id
+```
+
+Per esempio:
+
+```text
+codice locale / ICD
+        ↓
+Source Concept
+        ↓ "Maps to"
+SNOMED Standard Concept
+```
+
+I campi `*_CONCEPT_ID` sono quelli su cui devono lavorare le analisi standardizzate; `*_SOURCE_VALUE` serve soprattutto per conservare il valore originale e per QA. 
+
+Quindi il nostro **Vocabulary Service** dovrebbe essere un componente di prima classe, non una semplice tabella di lookup.
+
+Dovrebbe fornire:
+
+```text
+searchConcept()
+getConcept()
+getAncestors()
+getDescendants()
+mapSourceConcept()
+resolveConceptSet()
+getRelationships()
+getSynonyms()
+validateDomain()
+```
+
+Questo permetterebbe poi di chiedere:
+
+> tutti i pazienti con una patologia discendente da "Diabetes mellitus"
+
+senza conoscere migliaia di codici ICD/SNOMED.
+
+---
+
+# 5. Mapping dei dati locali
+
+OHDSI prevede esplicitamente il problema dei codici proprietari degli ospedali.
+
+Usagi aiuta a trovare il mapping:
+
+```text
+CODICE LOCALE
+    ↓
+similarity/search
+    ↓
+OMOP Concept
+    ↓
+revisione umana
+    ↓
+mapping approvato
+``` 
+
+
+Per i concetti realmente locali OMOP consente **Custom Concepts**, imponendo tra l'altro `concept_id > 2.000.000.000`; devono essere non-standard e vanno utilizzati come source concepts, continuando a mapparli dove possibile verso concetti standard. 
+
+Questo è particolarmente utile per un prodotto rivolto agli ospedali italiani: codifiche locali LIS, RIS, procedure interne, reparti, esami proprietari ecc. possono essere conservati senza inquinare il semantic layer standard.
+
+---
+
+# 6. Architettura che costruirei
+
+La documentazione OHDSI suggerisce indirettamente una separazione molto buona delle responsabilità. WebAPI stesso distingue CDM, vocabulary, results e temporary schema. 
+
+La estenderei così:
+
+```text
+                         ┌───────────────────────┐
+ HL7 v2 ────────────────►│                       │
+ FHIR ──────────────────►│  CONNECTOR / INGEST   │
+ JDBC / DB ─────────────►│                       │
+ CSV / Parquet ─────────►└───────────┬───────────┘
+                                     │
+                                     ▼
+                         ┌───────────────────────┐
+                         │ RAW / LANDING ZONE    │
+                         │ dati originali        │
+                         │ immutabili            │
+                         └───────────┬───────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+             Source profiler                  Vocabulary Service
+             WhiteRabbit                   Athena + local mappings
+                    │                                 │
+                    └──────────────┬──────────────────┘
+                                   ▼
+                         ┌──────────────────────┐
+                         │ ETL / MAPPING ENGINE │
+                         │ rules + lineage      │
+                         └──────────┬───────────┘
+                                    ▼
+                    ┌────────────────────────────┐
+                    │        OMOP CDM 5.5        │
+                    │                            │
+                    │ cdm     vocabulary         │
+                    └─────────────┬──────────────┘
+                                  │
+                 ┌────────────────┼────────────────┐
+                 ▼                ▼                ▼
+              DQD             ACHILLES        Cohort Engine
+          Quality checks      profiling       Circe/Generator
+                 │                │                │
+                 └────────────────┼────────────────┘
+                                  ▼
+                         ┌──────────────────────┐
+                         │ ANALYTICS ENGINE     │
+                         │ FeatureExtraction    │
+                         │ Characterization     │
+                         │ HADES                │
+                         └──────────┬───────────┘
+                                    ▼
+                         ┌──────────────────────┐
+                         │ API / QUERY SERVICE  │
+                         └──────────┬───────────┘
+                                    ▼
+                         UI / BI / AI / agents
+```
+
+---
+
+# 7. Schema fisico che adotterei
+
+Io separerei almeno:
+
+```text
+raw
+staging
+mapping
+omop_cdm
+omop_vocab
+omop_results
+omop_cohort
+omop_work
+app
+audit
+```
+
+`omop_cdm` diventerebbe **read-only per gli utenti analitici**.
+
+`omop_results` e `omop_cohort` sarebbero invece scrivibili dai motori analitici.
+
+Questa separazione coincide abbastanza bene con l'architettura OHDSI/WebAPI: CDM e vocabulary sono dati sorgente analitici, mentre results e temp vengono usati per le operazioni che richiedono scrittura. 
+
+---
+
+# 8. PostgreSQL come prima implementazione
+
+Per la prima versione sceglierei **PostgreSQL**.
+
+Il repository OMOP 5.5 contiene già separatamente:
+
+```text
+OMOPCDM_postgresql_5.5_ddl.sql
+OMOPCDM_postgresql_5.5_primary_keys.sql
+OMOPCDM_postgresql_5.5_indices.sql
+OMOPCDM_postgresql_5.5_constraints.sql
+``` 
+
+
+È esattamente quello che ci serve per bootstrap e migration testing.
+
+Il progetto mantiene inoltre DDL per molti altri target, tra cui BigQuery, DuckDB, Oracle, PostgreSQL, Redshift, Snowflake, Spark, SQL Server, SQLite e Synapse. 
+
+Quindi l'architettura dovrebbe evitare SQL PostgreSQL-specifico nel core analitico.
+
+---
+
+# 9. Un'idea particolarmente utile: trasformare la specifica OMOP in metadata
+
+Nel repository CommonDataModel OHDSI spiega che **la sorgente vera della definizione del CDM non è il DDL**, ma i file CSV strutturati che descrivono tabelle e campi; da questi vengono generate documentazione, DDL e parte delle regole Data Quality Dashboard. 
+
+Io sfrutterei esattamente questa impostazione.
+
+Il nostro software potrebbe avere un:
+
+```text
+OMOP Schema Registry
+```
+
+contenente per ciascuna versione:
+
+```text
+table
+field
+datatype
+required
+primaryKey
+foreignKey
+foreignTable
+foreignDomain
+userGuidance
+etlConvention
+cdmVersion
+```
+
+Da qui possiamo generare automaticamente:
+
+```text
+DDL
+migrations
+ORM models
+API schemas
+validation rules
+ETL validation
+documentation
+data dictionary
+```
+
+Questa potrebbe diventare una delle fondamenta più forti dell'Hyper Connector.
+
+---
+
+# 10. ETL: qui possiamo riutilizzare parecchio
+
+WhiteRabbit analizza automaticamente sorgenti SQL/CSV producendo informazioni su:
+
+```text
+tables
+columns
+types
+distinct values
+frequency distributions
+```
+
+e Rabbit-in-a-Hat aiuta a progettare il mapping sorgente → OMOP. 
+
+Però non costruirei il nuovo prodotto intorno alla loro GUI Java.
+
+Ne riutilizzerei **concetti, formati e algoritmi** creando un nostro ETL Designer web:
+
+```text
+SOURCE
+
+ADT.PAZIENTE.cod_sesso
+              │
+              ├─ transform
+              ▼
+OMOP.PERSON.gender_concept_id
+              │
+              └─ vocabulary map
+```
+
+Ogni mapping dovrebbe avere:
+
+```text
+source
+target
+transform
+concept mapping
+filter
+default
+quality rule
+version
+author
+timestamp
+lineage
+```
+
+Questo renderebbe l'ETL completamente versionabile e riproducibile.
+
+---
+
+# 11. FHIR → OMOP è già stato standardizzato
+
+Questa è un'altra libreria/documentazione molto rilevante.
+
+HL7 sta sviluppando un **FHIR to OMOP Implementation Guide** specificamente per trasformare dati FHIR in OMOP. Copre l'acquisizione da singole Resource, Bundle e Bulk Data, mapping dei coded fields e diversi pattern di trasformazione. 
+
+Il guide attuale è costruito sulla 5.4, quindi nel nostro software introdurrei:
+
+```text
+FHIR Adapter
+     ↓
+Canonical ingestion model
+     ↓
+FHIR→OMOP mapper
+     ↓
+OMOP 5.5
+```
+
+evitando di accoppiare direttamente il parser FHIR allo schema fisico OMOP.
+
+Questo ci permetterà in futuro di aggiungere:
+
+```text
+HL7 v2 → canonical → OMOP
+FHIR → canonical → OMOP
+CSV → canonical → OMOP
+JDBC → canonical → OMOP
+DICOM metadata → canonical → OMOP
+```
+
+senza duplicare la logica.
+
+---
+
+# 12. Data quality come elemento obbligatorio
+
+Non considererei un'importazione "terminata" quando l'ETL finisce.
+
+La pipeline dovrebbe essere:
+
+```text
+ETL
+ ↓
+Structural validation
+ ↓
+OMOP semantic validation
+ ↓
+Data Quality Dashboard
+ ↓
+Achilles profiling
+ ↓
+release dataset
+```
+
+DQD applica una serie parametrica di tipi di controllo che genera circa **4.000 controlli individuali** nelle versioni documentate, includendo conformità, completezza e plausibilità. 
+
+Achilles invece calcola statistiche descrittive sull'intera istanza OMOP e salva i risultati in uno schema separato. 
+
+Per noi diventerebbero due servizi diversi:
+
+```text
+Quality Service
+Characterization Service
+```
+
+---
+
+# 13. Il motore delle coorti è già praticamente pronto
+
+Una coorte potrebbe essere memorizzata come JSON:
+
+```json
+{
+  "entry": "diabetes",
+  "age": "> 65",
+  "observation": ">= 365 days",
+  "exclude": "renal failure"
+}
+```
+
+Circe trasforma la definizione strutturata in SQL OMOP.
+
+CohortGenerator la esegue e materializza:
+
+```text
+cohort_definition_id
+subject_id
+cohort_start_date
+cohort_end_date
+```
+
+CohortGenerator supporta anche statistiche di attrition, risultati e generazione incrementale. 
+
+Quindi **non riscriverei un linguaggio delle coorti da zero**.
+
+Creerei invece un nostro Cohort Service sopra Circe/CohortGenerator.
+
+---
+
+# 14. Stesso discorso per le feature
+
+FeatureExtraction parte da una coorte e genera automaticamente covariate quali:
+
+```text
+age
+gender
+conditions
+drugs
+procedures
+comorbidity indexes
+...
+```
+
+oltre a supportare covariate custom. 
+
+Quindi potremmo avere:
+
+```text
+POST /cohorts/42/features
+```
+
+che ritorna una feature matrix utilizzabile da:
+
+```text
+statistica
+ML
+AI
+prediction models
+BI
+```
+
+Questo rende OMOP molto più interessante di un semplice data warehouse.
+
+---
+
+# 15. ATLAS e WebAPI: riutilizzarli, ma non farei dipendere il prodotto da loro
+
+WebAPI offre già REST service per:
+
+- più database OMOP;
+- vocabulary search;
+- concept sets;
+- cohort definitions;
+- characterization;
+- incidence;
+- patient profiles;
+- population-level estimation;
+- patient-level prediction. 
+
+Ma il repository descrive ancora WebAPI come applicazione **Java 8**, mentre ATLAS è una UI costruita su uno stack frontend abbastanza datato. 
+
+Perciò farei:
+
+```text
+                nostro prodotto
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+   Modern REST API        OHDSI Adapter
+          │                     │
+          │                WebAPI / HADES
+          │                     │
+          └──────────┬──────────┘
+                     │
+                  OMOP
+```
+
+WebAPI diventerebbe un **compatibility sidecar**, non il nucleo dell'applicazione.
+
+In questo modo potremmo comunque rendere il database utilizzabile da ATLAS.
+
+---
+
+# 16. Privacy: bisogna pensarla già nell'ETL
+
+La documentazione OMOP avverte specificamente che:
+
+`person_id` non dovrebbe contenere MRN o identificativi reali;
+
+`*_source_value` può accidentalmente contenere PII;
+
+stringhe libere come `value_as_string`, `sig`, `NOTE` e `NOTE_NLP` sono particolarmente rischiose;
+
+eventuali date shifting devono essere applicati coerentemente a **tutti gli eventi della stessa persona**, altrimenti si altera la sequenza temporale. 
+
+Perciò metterei tra `raw` e `OMOP` un vero:
+
+```text
+Privacy / De-identification Pipeline
+
+tokenization
+pseudonymization
+PII detection
+free-text quarantine
+date handling
+source-value sanitization
+audit
+```
+
+La documentazione OHDSI è però prevalentemente orientata al contesto statunitense; per un prodotto europeo andrebbe sovrapposto il nostro modello GDPR e di governance.
+
+---
+
+# 17. Multiazienda / multi-CDM
+
+C'è un'altra caratteristica interessante già prevista da OHDSI.
+
+WebAPI supporta **più database OMOP contemporaneamente**, identificandoli come `source`, con configurazione separata per CDM, vocabulary, results e temp attraverso `source_daimon`. 
+
+Per il nostro progetto generalizzerei il concetto:
+
+```text
+Tenant
+ ├── DataSource A
+ │      ├── OMOP CDM
+ │      ├── Vocabulary
+ │      └── Results
+ │
+ ├── DataSource B
+ │
+ └── DataSource C
+```
+
+Questo si presta molto bene a un prodotto ospedaliero/regionale:
+
+```text
+AUSL Modena
+ ├ Carpi
+ ├ Mirandola
+ └ Baggiovara
+
+AOU Modena
+ ├ Policlinico
+ └ Baggiovara
+```
+
+oppure a installazioni completamente isolate.
+
+---
+
+# 18. La base tecnologica che sceglierei
+
+A questo punto vedo abbastanza chiaramente il nucleo del prodotto:
+
+```text
+                 HEALTH DATA PLATFORM
+
+                     API Gateway
+                         │
+        ┌────────────────┼─────────────────┐
+        │                │                 │
+ Connector Engine   Vocabulary Engine   Query Engine
+        │                │                 │
+ FHIR / HL7 / DB      Athena/Usagi       Cohorts
+        │                │              Features
+        └────────┬───────┴──────────┬──────┘
+                 │                  │
+           ETL / Lineage         Analytics
+                 │                  │
+                 ▼                  ▼
+             OMOP CDM 5.5 ───► Results
+                 │
+            ┌────┴────┐
+            │         │
+           DQD     Achilles
+```
+
+Per una prima implementazione concreta userei:
+
+| Componente | Scelta |
+|---|---|
+| DB principale | **PostgreSQL** |
+| OMOP | **CDM 5.5** |
+| Raw storage | S3/MinIO + Parquet |
+| ingestion | connector architecture |
+| FHIR | HAPI FHIR / FHIR parser + HL7 FHIR→OMOP IG |
+| HL7 v2 | HAPI HL7 / Mirth-compatible connector |
+| ETL | nostro engine + SQL |
+| Vocabulary | Athena + OMOP vocabulary |
+| Mapping | Usagi-compatible |
+| Cross-DB SQL | **SqlRender** |
+| Quality | **DataQualityDashboard** |
+| Profiling | **Achilles** |
+| Cohorts | **Circe + CohortGenerator** |
+| Features | **FeatureExtraction** |
+| Analytics | **HADES** |
+| OHDSI compatibility | WebAPI sidecar |
+| UI OHDSI | ATLAS opzionale |
+| API prodotto | nuova API REST |
+| Identity | OIDC / Keycloak |
+| deployment | Docker/Kubernetes |
+
+Il punto importante è che **non stiamo progettando un database OMOP**. Stiamo progettando un **OMOP Data Platform / Healthcare Data Fabric**.
+
+Il CDM diventa solamente il cuore standardizzato.
+
+La parte che può avere maggior valore proprietario è invece:
+
+```text
+CONNECT
+   ↓
+UNDERSTAND
+   ↓
+MAP
+   ↓
+STANDARDIZE
+   ↓
+VALIDATE
+   ↓
+QUERY
+   ↓
+ANALYZE
+```
+
+e buona parte degli ultimi quattro livelli può essere costruita integrando codice OHDSI già esistente anziché reinventarlo.
+
+La prossima mossa utile, a mio avviso, è trasformare tutto questo in una **vera architettura software del nostro Hyper Connector sanitario**, definendo repository/moduli, servizi, database/schema, API interne, container Docker e dipendenze OHDSI da incorporare o mantenere come sidecar. Questa ricerca ci dà già materiale sufficiente per impostarla in modo piuttosto concreto.

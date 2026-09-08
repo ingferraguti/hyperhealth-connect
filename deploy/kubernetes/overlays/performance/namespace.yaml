@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: hhc-performance, labels: {hhc.io/environment: performance}}
+

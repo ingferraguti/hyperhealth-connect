@@ -1,0 +1,27 @@
+# Effective owner for the public repository under the personal account.
+# Domain ownership remains defined in governance/controls.yml and the
+# engineering operating model. Replace these entries with organization teams
+# when the repository moves to a GitHub organization.
+
+* @ingferraguti
+
+/docs/adr/ @ingferraguti
+/docs/architecture/ @ingferraguti
+/docs/product/ @ingferraguti
+/docs/security/ @ingferraguti
+/docs/testing/ @ingferraguti
+/docs/standards/ @ingferraguti
+/docs/canonical-model/ @ingferraguti
+/docs/mapping/ @ingferraguti
+/docs/semantic/ @ingferraguti
+/docs/omop/ @ingferraguti
+/docs/deployment/ @ingferraguti
+/docs/operations/ @ingferraguti
+/.github/ @ingferraguti
+/deploy/ @ingferraguti
+/scripts/ @ingferraguti
+/connector-sdk/ @ingferraguti
+/integration-envelope/ @ingferraguti
+/security/ @ingferraguti
+/runtime/ @ingferraguti
+/platform/ @ingferraguti

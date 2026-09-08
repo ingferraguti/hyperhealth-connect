@@ -1,0 +1,31 @@
+schemaVersion: 1
+repositoryPolicy: hhc-enterprise
+defaultBranch: main
+enforcement: active-when-hosted
+rules:
+  pullRequestRequired: true
+  requiredApprovals: 2
+  dismissStaleApprovals: true
+  requireCodeOwnerReview: true
+  requireLastPushApproval: true
+  requireConversationResolution: true
+  requireSignedCommits: true
+  requireLinearHistory: true
+  allowForcePushes: false
+  allowDeletions: false
+  bypass:
+    allowed: false
+  requiredChecks:
+    strict: true
+    names:
+      - phase0-gate
+      - build-and-test
+      - security-analysis
+      - supply-chain
+  protectedFiles:
+    - .github/workflows/**
+    - .github/CODEOWNERS
+    - .github/branch-protection.yml
+    - pom.xml
+    - docs/adr/**
+

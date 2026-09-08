@@ -1,0 +1,38 @@
+# Build output
+target/
+**/target/
+build/
+out/
+
+# IDE and operating system
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# Test and security tool output
+.scannerwork/
+.semgrep/
+dependency-check-data/
+reports/
+coverage/
+
+# Local runtime data
+.data/
+volumes/
+logs/
+tmp/
+
+# Workstation-specific trust material used only by local verification
+.mvn/workstation-ca.cer

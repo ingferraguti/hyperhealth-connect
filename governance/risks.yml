@@ -1,0 +1,44 @@
+schemaVersion: 1
+reviewedAt: 2026-09-07
+risks:
+  - id: P0-R01
+    statement: cross-tenant or cross-facility disclosure caused by missing scope enforcement
+    severity: critical
+    owner: product-security
+    treatment: prevent
+    controls: [CTRL-TENANT-001, CTRL-LOG-001]
+    releaseGate: tenant-isolation-tests
+    residualRisk: low-after-independent-penetration-test
+  - id: P0-R02
+    statement: PHI enters source control, logs or test evidence
+    severity: critical
+    owner: data-protection-officer
+    treatment: prevent
+    controls: [CTRL-DATA-001, CTRL-LOG-001, CTRL-SECRET-001]
+    releaseGate: synthetic-data-and-redaction-scan
+    residualRisk: low
+  - id: P0-R03
+    statement: compromised dependency or build action produces an untrusted artifact
+    severity: critical
+    owner: product-security
+    treatment: reduce
+    controls: [CTRL-SBOM-001, CTRL-SIGN-001, CTRL-SCA-001]
+    releaseGate: supply-chain
+    residualRisk: medium-pending-hsm-and-private-runner
+  - id: P0-R04
+    statement: loss of control-plane state prevents safe clinical message processing
+    severity: high
+    owner: sre
+    treatment: reduce
+    controls: [CTRL-BC-001, CTRL-RESTORE-001]
+    releaseGate: restore-drill-before-pilot
+    residualRisk: medium-in-phase-zero
+  - id: P0-R05
+    statement: semantic transformation changes clinical meaning
+    severity: critical
+    owner: clinical-safety-officer
+    treatment: prevent
+    controls: [CTRL-SEM-001, CTRL-TRACE-001]
+    releaseGate: golden-corpus-and-clinical-review
+    residualRisk: medium-pending-technical-mvp
+

@@ -1,0 +1,16 @@
+schemaVersion: 1
+classification: synthetic-only
+realPatientDataAllowed: false
+productionIdentifiersAllowed: false
+freeTextAllowed: false
+requiredMarkers:
+  - HHC-SYNTHETIC
+  - test-mode
+prohibitedPatterns:
+  - national-health-identifier
+  - real-access-token
+  - production-hostname
+retentionDays: 30
+owner: quality-engineering
+approvers: [data-protection-officer, clinical-safety-officer]
+

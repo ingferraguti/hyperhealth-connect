@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: hhc-integration, labels: {hhc.io/environment: integration}}
+

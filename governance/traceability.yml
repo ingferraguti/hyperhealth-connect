@@ -1,0 +1,43 @@
+schemaVersion: 1
+baseline: phase-0
+reviewedAt: 2026-09-07
+items:
+  - requirement: NFR-SEC-001
+    decisions: [ADR-008, ADR-009]
+    controls: [CTRL-TENANT-001, CTRL-LOG-001]
+    tests:
+      - security/src/test/java/io/hyperhealth/connect/security/TenantScopeTest.java
+      - security/src/test/java/io/hyperhealth/connect/security/SensitiveValueRedactorTest.java
+    evidence: target/phase0-evidence/test-summary.json
+    owner: product-security
+  - requirement: NFR-REL-001
+    decisions: [ADR-001, ADR-006, ADR-017]
+    controls: [CTRL-BC-001, CTRL-RESTORE-001]
+    tests: [scripts/phase0-gate.ps1]
+    evidence: target/phase0-evidence/environment-validation.json
+    owner: sre
+  - requirement: NFR-AUD-001
+    decisions: [ADR-008, ADR-016]
+    controls: [CTRL-LOG-001, CTRL-TRACE-001]
+    tests: [security/src/test/java/io/hyperhealth/connect/security/SensitiveValueRedactorTest.java]
+    evidence: target/phase0-evidence/test-summary.json
+    owner: compliance-engineering
+  - requirement: NFR-SUPPLY-001
+    decisions: [ADR-002, ADR-010]
+    controls: [CTRL-SBOM-001, CTRL-SIGN-001, CTRL-SCA-001]
+    tests: [scripts/phase0-gate.ps1]
+    evidence: target/phase0-evidence/qualification-report.json
+    owner: release-engineering
+  - requirement: FR-CON-001
+    decisions: [ADR-003, ADR-010]
+    controls: [CTRL-CONTRACT-001]
+    tests: [connector-sdk/src/test/java/io/hyperhealth/connect/sdk/ConnectorDescriptorTest.java]
+    evidence: target/phase0-evidence/test-summary.json
+    owner: integration-runtime
+  - requirement: FR-SEM-001
+    decisions: [ADR-005, ADR-011, ADR-012, ADR-015, ADR-016]
+    controls: [CTRL-SEM-001, CTRL-TRACE-001]
+    tests: [docs/testing/phase-0-use-case-test-design.md]
+    evidence: planned/technical-mvp-golden-corpus
+    owner: clinical-informatics
+
