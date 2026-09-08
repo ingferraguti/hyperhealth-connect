@@ -1,13 +1,14 @@
 schemaVersion: 1
 repositoryPolicy: hhc-enterprise
 defaultBranch: main
-enforcement: active-when-hosted
+enforcement: active
+operatingMode: solo-maintainer-bootstrap
 rules:
   pullRequestRequired: true
-  requiredApprovals: 2
+  requiredApprovals: 0
   dismissStaleApprovals: true
-  requireCodeOwnerReview: true
-  requireLastPushApproval: true
+  requireCodeOwnerReview: false
+  requireLastPushApproval: false
   requireConversationResolution: true
   requireSignedCommits: true
   requireLinearHistory: true
@@ -28,4 +29,13 @@ rules:
     - .github/branch-protection.yml
     - pom.xml
     - docs/adr/**
-
+promotionToTeamMode:
+  trigger: at-least-two-independent-qualified-reviewers-available
+  changes:
+    requiredApprovals: 2
+    requireCodeOwnerReview: true
+    requireLastPushApproval: true
+  evidence:
+    - collaborator-access-review
+    - codeowners-coverage-review
+    - successful-protected-pull-request

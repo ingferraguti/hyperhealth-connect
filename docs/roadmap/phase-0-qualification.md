@@ -37,7 +37,7 @@ I digest sono riferiti all’esecuzione locale sopra indicata e cambiano a ogni 
 
 ## Eccezioni e limiti dichiarati
 
-Il repository pubblico canonico è ospitato su GitHub e la policy server-side di `main` è allineata a `.github/branch-protection.yml`. Firma keyless e attestazione OIDC sono prodotte esclusivamente dal workflow ospitato; il gate locale verifica separatamente una firma effimera senza conservare la chiave privata.
+Il repository pubblico canonico è ospitato su GitHub e la policy server-side di `main` è allineata a `.github/branch-protection.yml`. Nella fase bootstrap opera un solo maintainer: ogni modifica passa comunque da pull request, convergenza con `main`, conversazioni risolte, cronologia lineare, commit firmato e quattro gate CI obbligatori, ma non richiede auto-approvazioni prive di indipendenza. Appena sono disponibili almeno due reviewer qualificati e indipendenti, la policy impone il passaggio alla modalità team con due approvazioni, CODEOWNERS e approvazione dell'ultimo push. Firma keyless e attestazione OIDC sono prodotte esclusivamente dal workflow ospitato; il gate locale verifica separatamente una firma effimera senza conservare la chiave privata.
 
 Le warning del validatore CycloneDX riguardano keyword meta-schema annotate dalla libreria di validazione; la BOM 1.6 è stata generata e validata. Le warning Mockito/JDK provengono dal test starter e non indicano failure; verranno eliminate prima del passaggio alla futura policy JDK che impedirà il dynamic attach.
 
