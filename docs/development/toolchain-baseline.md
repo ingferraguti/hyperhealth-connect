@@ -8,7 +8,7 @@ Owner: Developer Experience e Platform Engineering
 
 | Elemento | Baseline | Meccanismo di pin |
 |---|---|---|
-| Java | 21 LTS | Maven Enforcer `[21,22)`, CI Temurin `21.0.11+10`, runtime image per digest |
+| Java | 21 LTS | Maven Enforcer `[21,22)`, CI Temurin SemVer `21.0.11+10.0.LTS`, runtime image `21.0.11+10` per digest |
 | Maven | 3.9.16 | Wrapper `only-script` e SHA-256 della distribuzione |
 | Spring Boot | 4.1.1 | BOM nel parent POM |
 | Apache Camel | 4.22.0 LTS | Camel Spring Boot BOM |
@@ -34,4 +34,3 @@ Il codice è compilato con `--release 21`. L’immagine Jammy è multi-arch e ha
 - [SpotBugs Maven plugin releases](https://github.com/spotbugs/spotbugs-maven-plugin/releases) e [FindSecBugs releases](https://github.com/find-sec-bugs/find-sec-bugs/releases), consultati il 7 settembre 2026.
 - [CycloneDX Maven plugin](https://github.com/CycloneDX/cyclonedx-maven-plugin) e [CycloneDX specification](https://cyclonedx.org/specification/overview/), consultati il 7 settembre 2026.
 - [Eclipse Temurin official image](https://hub.docker.com/_/eclipse-temurin) e [Adoptium container repository](https://github.com/adoptium/containers), manifest verificati il 7 settembre 2026.
-
