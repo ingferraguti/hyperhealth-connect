@@ -154,6 +154,8 @@ UC-CLIN-001 ADT, UC-CLIN-002 laboratorio, UC-OPS-002 autonomia dal Control Plane
 
 ## 7. Fase 1 — Foundation / Technical MVP
 
+La scomposizione operativa, le dipendenze, le stime e i gate di completamento sono definiti nella [roadmap esecutiva della Fase 1](./phase-1-execution.md).
+
 ### 7.1 Outcome
 
 Dimostrare due vertical slice reali con l'architettura definitiva:
