@@ -11,7 +11,7 @@ Tracker machine-readable: [`governance/phase-1-delivery-tracker.yml`](../../gove
 | Work package | Stato | Gate | Epic issue | Dipendenza immediata |
 |---|---|---|---|---|
 | WP1-00 Mobilitazione | DONE | G1 PASS | [#3](https://github.com/ingferraguti/hyperhealth-connect/issues/3) | completato l'11 settembre 2026 |
-| WP1-01 Tenancy/identity/DB | READY | G2 | [#4](https://github.com/ingferraguti/hyperhealth-connect/issues/4) | G1 |
+| WP1-01 Tenancy/identity/DB | IN PROGRESS — P1-0101 implemented | G2 | [#4](https://github.com/ingferraguti/hyperhealth-connect/issues/4) | G1 |
 | WP1-02 Raw/durability | READY | G3 | [#5](https://github.com/ingferraguti/hyperhealth-connect/issues/5) | G1 e scope WP1-01 |
 | WP1-03 Reliability kernel | PLANNED | G4 | [#6](https://github.com/ingferraguti/hyperhealth-connect/issues/6) | G3 |
 | WP1-04 Connector SDK | PLANNED | G5 | [#7](https://github.com/ingferraguti/hyperhealth-connect/issues/7) | G2–G4 |

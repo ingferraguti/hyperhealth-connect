@@ -1,6 +1,6 @@
 schemaVersion: 1
 baseline: phase-1-WP1-00
-reviewedAt: 2026-09-10
+reviewedAt: 2026-09-11
 items:
   - requirement: NFR-SEC-001
     decisions: [ADR-008, ADR-009]
@@ -43,7 +43,14 @@ items:
   - requirement: FR-TEN-001
     decisions: [ADR-001, ADR-009, ADR-025]
     controls: [CTRL-TENANT-001, CTRL-SECRET-001, CTRL-CONTRACT-001]
-    tests: [planned/R0.2/G2/tenant-isolation-matrix, planned/R0.2/G2/oidc-negative-matrix]
+    implementation:
+      - platform/control-plane/src/main/java/io/hyperhealth/connect/controlplane/inventory
+    tests:
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryIdTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryHierarchyTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/RuntimeCellTest.java
+      - planned/R0.2/G2/tenant-isolation-matrix
+      - planned/R0.2/G2/oidc-negative-matrix
     evidence: evidence/R0.2/G2
     owner: platform-engineering
   - requirement: FR-EVT-001

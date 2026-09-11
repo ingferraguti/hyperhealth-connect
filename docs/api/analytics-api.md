@@ -75,7 +75,7 @@ Esempio di context:
 ```json
 {
   "subjectId": "researcher-opaque",
-  "tenantId": "tn-...",
+  "tenantId": "t-...",
   "datasetVersionId": "dsv-...",
   "purpose": "approved-protocol-2026-041",
   "permitId": "permit-...",

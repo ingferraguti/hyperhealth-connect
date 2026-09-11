@@ -12,7 +12,7 @@ trackingMode: github-milestone-and-epic-issues
 projectsScopeAvailable: false
 workPackages:
   - {id: WP1-00, state: DONE, gate: G1-PASS, issue: 3, url: https://github.com/ingferraguti/hyperhealth-connect/issues/3}
-  - {id: WP1-01, state: READY, gate: G2, issue: 4, url: https://github.com/ingferraguti/hyperhealth-connect/issues/4}
+  - {id: WP1-01, state: IN_PROGRESS, completedActivities: [P1-0101], gate: G2, issue: 4, url: https://github.com/ingferraguti/hyperhealth-connect/issues/4}
   - {id: WP1-02, state: READY, gate: G3, issue: 5, url: https://github.com/ingferraguti/hyperhealth-connect/issues/5}
   - {id: WP1-03, state: PLANNED, gate: G4, issue: 6, url: https://github.com/ingferraguti/hyperhealth-connect/issues/6}
   - {id: WP1-04, state: PLANNED, gate: G5, issue: 7, url: https://github.com/ingferraguti/hyperhealth-connect/issues/7}
