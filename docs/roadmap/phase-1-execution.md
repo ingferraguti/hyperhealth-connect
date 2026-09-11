@@ -185,7 +185,7 @@ Dipendenze: G1. Effort: 55–75 giorni/persona, parzialmente sovrapponibile a WP
 
 Attività:
 
-- P1-0101: implementare ID immutabili e gerarchia Tenant/Organization/Facility/Application/Endpoint/Runtime Cell;
+- P1-0101: **IMPLEMENTED** — ID immutabili e gerarchia Tenant/Organization/Facility/Application/Endpoint con Runtime Cell associata a scope espliciti; evidenza in [phase-1-p1-0101-implementation.md](phase-1-p1-0101-implementation.md);
 - P1-0102: definire schema SQL, migration expand/contract, constraint e indici;
 - P1-0103: applicare tenant/facility scope in repository, service e API;
 - P1-0104: introdurre OIDC, ruoli minimi e workload identity separata;

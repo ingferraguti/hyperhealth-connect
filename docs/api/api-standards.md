@@ -240,7 +240,7 @@ Deploy, replay, export, cohort, DQD e characterization restituiscono `202` e una
   "operationId": "op-01...",
   "type": "deployment",
   "status": "QUEUED",
-  "scope": {"tenantId": "tn-..."},
+  "scope": {"tenantId": "t-..."},
   "requestedAt": "2026-09-01T10:00:00Z",
   "requestedBy": "subject-opaque",
   "progress": {"completed": 0, "total": null},

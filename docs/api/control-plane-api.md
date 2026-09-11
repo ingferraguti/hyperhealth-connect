@@ -93,7 +93,7 @@ Ogni risorsa governata contiene almeno:
 ```json
 {
   "id": "opaque-id",
-  "tenantId": "tn-...",
+  "tenantId": "t-...",
   "name": "human-readable",
   "status": "DRAFT",
   "version": 7,
@@ -223,7 +223,7 @@ Un flow versionato specifica ingress, processing, mapping, destinations, failure
 {
   "flowId": "flow-lab-result",
   "release": "3.2.0",
-  "scope": {"tenantId": "tn-...", "facilityId": "fac-..."},
+  "scope": {"tenantId": "t-...", "facilityId": "f-..."},
   "sourceConnectorInstanceId": "ci-...",
   "pipeline": [
     {"type": "validate", "contractRef": "contract://...@1.1.0"},
@@ -246,10 +246,10 @@ Validation produce dependency graph, compatibility report, threat/policy finding
 {
   "deploymentId": "dep-...",
   "flowReleaseRef": "flow://lab-result@3.2.0",
-  "targets": ["cell-a", "cell-b"],
+  "targets": ["rc-...", "rc-..."],
   "strategy": {
     "type": "CANARY",
-    "canaryTargets": ["cell-a"],
+    "canaryTargets": ["rc-..."],
     "maxUnavailable": 0,
     "pauseAfterCanary": true
   },
