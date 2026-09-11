@@ -23,6 +23,7 @@ rules:
       - build-and-test
       - security-analysis
       - supply-chain
+      - phase1-mobilization-gate
   protectedFiles:
     - .github/workflows/**
     - .github/CODEOWNERS
