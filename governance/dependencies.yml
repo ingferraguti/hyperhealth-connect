@@ -1,5 +1,5 @@
 schemaVersion: 1
-reviewedAt: 2026-09-08
+reviewedAt: 2026-09-10
 policy: docs/development/dependency-and-license-policy.md
 dependencies:
   - id: temurin-jdk
@@ -85,4 +85,128 @@ dependencies:
     lifecycleOwner: platform-engineering
     securityOwner: product-security
     licenseOwner: legal-open-source-office
+    updateCadence: monthly-and-critical-cve
+  - id: postgresql
+    version: "18.6"
+    image: postgres:18.6-bookworm
+    digest: sha256:1c59e2c3c818eaa0f0628f695b36e7c9e362d6b219b36a54a32df645cbd7e1af
+    digestVerifiedAt: 2026-09-10
+    purpose: Platform DB and transactional ledgers
+    source: https://www.postgresql.org/docs/18/
+    license: PostgreSQL
+    lifecycleOwner: data-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-with-ha-backup-fencing-and-patch-gates
+    distributionDecision: unmodified-external-service-image
+    updateCadence: quarterly-patch-and-critical-cve
+  - id: kubernetes
+    version: "1.36.4"
+    purpose: reference orchestrator for R0.2 qualification and deployment overlays
+    source: https://kubernetes.io/releases/1.36/
+    license: Apache-2.0
+    lifecycleOwner: platform-sre
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-supported-branch-patch-before-campaign-and-version-skew-gates
+    distributionDecision: customer-or-environment-provided-platform-not-embedded
+    artifactDigestPolicy: distribution-binaries-and-images-verified-per-environment-manifest
+    supportClass: upstream-supported-through-2027-06-28
+    updateCadence: monthly-patch-and-critical-cve
+  - id: apache-kafka
+    version: "4.1.0"
+    image: apache/kafka:4.1.0
+    digest: sha256:bff074a5d0051dbc0bbbcd25b045bb1fe84833ec0d3c7c965d1797dd289ec88f
+    digestVerifiedAt: 2026-09-08
+    purpose: asynchronous event transport and recovery buffer
+    source: https://kafka.apache.org/downloads
+    license: Apache-2.0
+    lifecycleOwner: runtime-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-with-tls-acl-quorum-and-topic-policy-gates
+    distributionDecision: unmodified-external-service-image
+    updateCadence: quarterly-and-critical-cve
+  - id: seaweedfs
+    version: "4.46"
+    image: chrislusf/seaweedfs:4.46
+    digest: sha256:08d516132314207d10c8e37cbffc1f32b147d870169688734cc61c6231625b62
+    digestVerifiedAt: 2026-09-10
+    purpose: R0.2 reference implementation of the S3-compatible raw object store contract
+    source: https://github.com/seaweedfs/seaweedfs/releases/tag/4.46
+    license: Apache-2.0
+    lifecycleOwner: data-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-for-development-and-qualification-pending-production-topology-review
+    distributionDecision: unmodified-external-service-image
+    supportClass: upstream-community-reference-not-production-certification
+    updateCadence: monthly-review-and-critical-cve
+  - id: flyway-community
+    version: "13.5.0"
+    purpose: versioned PostgreSQL schema migrations
+    source: https://github.com/flyway/flyway/releases/tag/flyway-13.5.0
+    license: Apache-2.0
+    lifecycleOwner: data-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-community-core-only
+    distributionDecision: embedded-build-and-runtime-library-commercial-modules-excluded
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: monthly-review-and-critical-cve
+  - id: keycloak
+    version: "26.7.3"
+    image: quay.io/keycloak/keycloak:26.7.3
+    digest: sha256:ff4257d0d64efbe99ed1ddfaf07765cc3c36dc7518bf8324d41961327f441c54
+    digestVerifiedAt: 2026-09-10
+    purpose: OIDC test and conformance identity provider
+    source: https://github.com/keycloak/keycloak/releases/tag/26.7.3
+    license: Apache-2.0
+    lifecycleOwner: identity-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-for-test-conformance-production-requires-idp-topology-qualification
+    distributionDecision: unmodified-external-service-image
+    updateCadence: monthly-and-critical-cve
+  - id: opentelemetry-collector-contrib
+    version: "0.160.0"
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    digest: sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
+    digestVerifiedAt: 2026-09-10
+    purpose: vendor-neutral telemetry collection processing and export
+    source: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.160.0
+    license: Apache-2.0
+    lifecycleOwner: observability-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-with-component-allowlist-redaction-and-egress-policy
+    distributionDecision: unmodified-external-service-image
+    updateCadence: monthly-and-critical-cve
+  - id: prometheus
+    version: "3.14.0"
+    image: prom/prometheus:v3.14.0
+    digest: sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    digestVerifiedAt: 2026-09-10
+    purpose: R0.2 metrics query rules and alert source
+    source: https://github.com/prometheus/prometheus/releases/tag/v3.14.0
+    license: Apache-2.0
+    lifecycleOwner: observability-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-with-auth-network-isolation-retention-and-cardinality-gates
+    distributionDecision: unmodified-external-service-image
+    updateCadence: monthly-and-critical-cve
+  - id: jaeger
+    version: "2.20.0"
+    image: jaegertracing/jaeger:2.20.0
+    digest: sha256:46a886260e04002d8f45e213fc39063fa11a50446048fdaa64786fc0840cb9f8
+    digestVerifiedAt: 2026-09-10
+    purpose: R0.2 trace storage query and investigation backend
+    source: https://github.com/jaegertracing/jaeger/releases/tag/v2.20.0
+    license: Apache-2.0
+    lifecycleOwner: observability-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-for-r0-2-with-external-storage-auth-and-retention-gates
+    distributionDecision: unmodified-external-service-image
     updateCadence: monthly-and-critical-cve

@@ -1,9 +1,9 @@
 # Esecuzione della Fase 1 — Foundation / Technical MVP
 
-Stato: pianificata  
-Baseline: 10 settembre 2026  
-Release target: R0.2 Technical MVP  
-Owner: Program Engineering  
+Stato: in esecuzione — WP1-00 completato, G1 superato
+Baseline: 10 settembre 2026
+Release target: R0.2 Technical MVP
+Owner: Program Engineering
 Gate owner: Architecture, Product Security, SRE, Quality Engineering e Clinical Informatics
 
 ## 1. Obiettivo e definizione di completamento
@@ -150,6 +150,8 @@ Un'attività è DONE quando:
 
 Dipendenze: qualification R0.1 verde. Effort: 20–30 giorni/persona.
 
+**Stato:** DONE — completato l'11 settembre 2026. La qualification R0.1 di ingresso è verde nel [run 34449013221](https://github.com/ingferraguti/hyperhealth-connect/actions/runs/34449013221). Il record di esecuzione e il verdetto G1 sono in [phase-1-wp1-00-qualification.md](./phase-1-wp1-00-qualification.md).
+
 Attività:
 
 - P1-0001: trasformare lo scope R0.2 in backlog requirement–use case–test–evidence;
@@ -174,6 +176,8 @@ Gate G1 — Ready to build:
 - nessuna decisione critica aperta su persistenza, ACK, tenancy o identity;
 - tutti gli epic P0 hanno owner e acceptance test;
 - nessun componente fondamentale privo di security/license disposition.
+
+**Verdetto G1:** PASS. Le decisioni critiche sono chiuse dagli ADR-025–028; i 13 epic P0 successivi hanno owner e acceptance oracle; le dipendenze core selezionate sono versionate, digest-pinned ove containerizzate e hanno security/license disposition. I reviewer indipendenti sono staffing checkpoint vincolanti dei gate successivi e non sono sostituiti dal solo maintainer.
 
 ### WP1-01 — Tenancy, identità e Platform DB
 

@@ -1,0 +1,40 @@
+schemaVersion: 1
+baseline: R0.2
+updatedAt: 2026-09-11
+owner: program-engineering
+repository: https://github.com/ingferraguti/hyperhealth-connect
+milestone:
+  number: 1
+  title: R0.2 Technical MVP
+  url: https://github.com/ingferraguti/hyperhealth-connect/milestone/1
+  dueAt: 2027-03-31
+trackingMode: github-milestone-and-epic-issues
+projectsScopeAvailable: false
+workPackages:
+  - {id: WP1-00, state: DONE, gate: G1-PASS, issue: 3, url: https://github.com/ingferraguti/hyperhealth-connect/issues/3}
+  - {id: WP1-01, state: READY, gate: G2, issue: 4, url: https://github.com/ingferraguti/hyperhealth-connect/issues/4}
+  - {id: WP1-02, state: READY, gate: G3, issue: 5, url: https://github.com/ingferraguti/hyperhealth-connect/issues/5}
+  - {id: WP1-03, state: PLANNED, gate: G4, issue: 6, url: https://github.com/ingferraguti/hyperhealth-connect/issues/6}
+  - {id: WP1-04, state: PLANNED, gate: G5, issue: 7, url: https://github.com/ingferraguti/hyperhealth-connect/issues/7}
+  - {id: WP1-05, state: PLANNED, gate: G6, issue: 8, url: https://github.com/ingferraguti/hyperhealth-connect/issues/8}
+  - {id: WP1-06, state: PLANNED, gate: G7, issue: 9, url: https://github.com/ingferraguti/hyperhealth-connect/issues/9}
+  - {id: WP1-07, state: PLANNED, gate: M1, issue: 10, url: https://github.com/ingferraguti/hyperhealth-connect/issues/10}
+  - {id: WP1-08, state: PLANNED, gate: M2, issue: 11, url: https://github.com/ingferraguti/hyperhealth-connect/issues/11}
+  - {id: WP1-09, state: PLANNED, gate: M3, issue: 12, url: https://github.com/ingferraguti/hyperhealth-connect/issues/12}
+  - {id: WP1-10, state: PLANNED, gate: M4, issue: 13, url: https://github.com/ingferraguti/hyperhealth-connect/issues/13}
+  - {id: WP1-11, state: PLANNED, gate: M5, issue: 14, url: https://github.com/ingferraguti/hyperhealth-connect/issues/14}
+  - {id: WP1-12, state: PLANNED, gate: G8, issue: 15, url: https://github.com/ingferraguti/hyperhealth-connect/issues/15}
+  - {id: WP1-13, state: PLANNED, gate: G9, issue: 16, url: https://github.com/ingferraguti/hyperhealth-connect/issues/16}
+labels:
+  - phase:1
+  - type:epic
+  - priority:P0
+  - gate
+  - area:platform
+  - area:runtime
+  - area:connectors
+  - area:semantic
+  - area:security
+  - area:sre
+  - area:release
+  - status:blocked

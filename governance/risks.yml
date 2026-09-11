@@ -1,5 +1,5 @@
 schemaVersion: 1
-reviewedAt: 2026-09-07
+reviewedAt: 2026-09-10
 risks:
   - id: P0-R01
     statement: cross-tenant or cross-facility disclosure caused by missing scope enforcement
@@ -41,4 +41,80 @@ risks:
     controls: [CTRL-SEM-001, CTRL-TRACE-001]
     releaseGate: golden-corpus-and-clinical-review
     residualRisk: medium-pending-technical-mvp
-
+  - id: P1-R01
+    statement: acknowledged HL7 event is not recoverable because raw and ledger diverge
+    severity: critical
+    owner: runtime-architecture
+    treatment: prevent
+    controls: [CTRL-BC-001, CTRL-RESTORE-001, CTRL-TRACE-001]
+    releaseGate: G3-durability-crash-matrix
+    residualRisk: medium-pending-G3-and-G8-evidence
+    decision: ADR-026
+  - id: P1-R02
+    statement: duplicate or ambiguous retry causes an unintended downstream clinical side effect
+    severity: critical
+    owner: runtime-architecture
+    treatment: prevent-and-detect
+    controls: [CTRL-TRACE-001, CTRL-CONTRACT-001]
+    releaseGate: G4-idempotency-and-reconciliation
+    residualRisk: medium-pending-partner-contract-evidence
+    decision: ADR-027
+  - id: P1-R03
+    statement: raw object store reference implementation lacks a required S3 immutability recovery or scale capability
+    severity: high
+    owner: data-platform
+    treatment: reduce-and-contain
+    controls: [CTRL-DATA-001, CTRL-BC-001, CTRL-RESTORE-001]
+    releaseGate: G3-object-contract-and-M5-restore
+    residualRisk: medium-reference-product-not-yet-production-qualified
+    decision: ADR-025
+  - id: P1-R04
+    statement: runtime activates a corrupt incompatible revoked or cross-scope local bundle while the Control Plane is unavailable
+    severity: critical
+    owner: runtime-release-engineering
+    treatment: prevent
+    controls: [CTRL-SIGN-001, CTRL-TENANT-001, CTRL-CONTRACT-001]
+    releaseGate: G7-bundle-integrity-and-autonomy
+    residualRisk: medium-pending-four-hour-outage-test
+    decision: ADR-028
+  - id: P1-R05
+    statement: HL7 technical mapping changes patient result unit status or correction meaning
+    severity: critical
+    owner: clinical-safety-officer
+    treatment: prevent-and-detect
+    controls: [CTRL-SEM-001, CTRL-TRACE-001]
+    releaseGate: M1-M2-golden-corpus-and-independent-clinical-review
+    residualRisk: medium-pending-clinical-review
+  - id: P1-R06
+    statement: PHI or a direct identifier leaks through telemetry DLQ UI test evidence or agentic tooling
+    severity: critical
+    owner: data-protection-officer
+    treatment: prevent-and-detect
+    controls: [CTRL-DATA-001, CTRL-LOG-001, CTRL-SECRET-001]
+    releaseGate: M4-canary-phi-and-access-review
+    residualRisk: medium-pending-M4-independent-security-review
+  - id: P1-R07
+    statement: hot tenant slow downstream replay or observability outage exhausts shared resources and harms unrelated facilities
+    severity: high
+    owner: sre
+    treatment: reduce
+    controls: [CTRL-TENANT-001, CTRL-BC-001, CTRL-TRACE-001]
+    releaseGate: G8-hot-scope-slow-partner-and-outage-tests
+    residualRisk: medium-pending-reference-benchmark
+  - id: P1-R08
+    statement: dependency release or container image introduces exploitable code license conflict or unrepeatable supply chain state
+    severity: critical
+    owner: product-security
+    treatment: prevent-and-reduce
+    controls: [CTRL-SBOM-001, CTRL-SIGN-001, CTRL-SCA-001]
+    releaseGate: G9-supply-chain-and-license-disposition
+    residualRisk: low-for-G1-medium-until-built-artifacts-are-scanned
+  - id: P1-R09
+    statement: single-maintainer staffing removes independent security clinical performance or recovery review
+    severity: high
+    owner: program-engineering
+    treatment: reduce
+    controls: [CTRL-TRACE-001]
+    releaseGate: role-specific-G2-G3-M2-M4-M5-G8-G9-checkpoints
+    residualRisk: high-until-independent-reviewers-are-contracted
+    reference: docs/roadmap/phase-1-raci.md

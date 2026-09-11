@@ -1,0 +1,186 @@
+schemaVersion: 1
+manifestType: hhc-performance-test
+status: BASELINE_TEMPLATE
+baseline: R0.2
+approvedAt: 2026-09-10
+owners:
+  accountable: quality-performance-engineering
+  environment: sre
+  oracle: quality-engineering-independent-from-implementation
+dataClassification: synthetic-only
+referenceEnvironment: docs/testing/phase-1-reference-environment.yml
+
+runIdentity:
+  testId: assigned-per-run
+  productRelease: 0.2.0
+  commitSha: required-40-hex
+  sourceTreeDirty: false
+  artifactDigests: required-per-component
+  dependencyManifest: governance/dependencies.yml
+  startedAtUtc: required-rfc3339
+  finishedAtUtc: required-rfc3339
+  operator: required
+  witness: required-for-G8
+
+clockAndMeasurement:
+  timeSource: chrony-or-platform-equivalent
+  maximumClockOffsetMs: 5
+  latencyRecorder: hdrhistogram-compatible
+  coordinatedOmissionCorrection: required
+  warmupMinutes: 10
+  measurementMinutes: 60
+  repetitions: 3
+  percentileSet: [p50, p90, p95, p99, p99.9, max]
+  rawSeriesRetention: required
+  excludedRunPolicy: retain-and-explain-never-delete
+
+workload:
+  generatorHosts: 2
+  generatorUtilizationCeilingPercent: 60
+  seed: 20260910
+  tenants: 20
+  organizationsPerTenant: 2
+  facilitiesPerOrganization: 4
+  applicationsPerFacility: 3
+  endpointsPerApplication: 2
+  flowMix:
+    hl7v2OruAsyncPercent: 60
+    hl7v2AdtAsyncPercent: 25
+    hl7v2FastPathPercent: 15
+  payloadBytes:
+    distribution: fixed-mixture
+    p50: 4096
+    p90: 8192
+    p99: 32768
+    maximum: 65536
+  messageProfiles:
+    - HL7v2-ORU-R01-synthetic
+    - HL7v2-ADT-A01-A08-synthetic
+  offeredRateEventsPerSecond: 2000
+  arrivalModel: open-loop-rate-controlled
+  hotScope:
+    enabled: true
+    hottestTenantTrafficPercent: 50
+    hottestFacilityWithinTenantPercent: 60
+  duplicatesPercent: 1
+  correctionsPercent: 0.5
+  malformedPercent: 0.1
+  downstream:
+    nominalLatencyMs: 20
+    p99LatencyMs: 80
+    errorPercent: 0.1
+  validation:
+    independentSinkVerifier: required
+    compareRawDigest: true
+    compareTenantFacilityScope: true
+    compareBusinessIdentity: true
+
+scenarios:
+  - id: PERF-R02-FAST-001
+    description: HL7 v2 fast-path overhead up to 64 KiB
+    durationMinutes: 30
+    acceptance:
+      hhcOverheadP95Ms: {operator: lte, value: 50}
+      hhcOverheadP99Ms: {operator: lte, value: 100}
+      integrityMismatch: {operator: eq, value: 0}
+      crossScopeEvent: {operator: eq, value: 0}
+  - id: PERF-R02-ASYNC-001
+    description: reference asynchronous ingest for 60 minutes
+    durationMinutes: 60
+    acceptance:
+      sustainedEventsPerSecond: {operator: gte, value: 2000}
+      ingestP99Ms: {operator: lte, value: 250}
+      runtimeCpuAveragePercent: {operator: lte, value: 70}
+      acceptedEventLoss: {operator: eq, value: 0}
+      unexplainedDuplicateSideEffect: {operator: eq, value: 0}
+      integrityMismatch: {operator: eq, value: 0}
+      crossScopeEvent: {operator: eq, value: 0}
+  - id: PERF-R02-MILLION-001
+    description: at least one million mixed synthetic events
+    minimumAcceptedEvents: 1000000
+    acceptance:
+      reconciliationDifference: {operator: eq, value: 0}
+      rawChecksumMismatch: {operator: eq, value: 0}
+      auditGap: {operator: eq, value: 0}
+  - id: PERF-R02-HOT-001
+    description: tenant and facility fairness under hot scope
+    durationMinutes: 30
+    acceptance:
+      nonHotTenantP99RegressionPercent: {operator: lte, value: 10}
+      crossScopeEvent: {operator: eq, value: 0}
+      unboundedQueue: {operator: eq, value: 0}
+  - id: PERF-R02-SLOW-001
+    description: slow downstream plus live traffic and recovery
+    durationMinutes: 60
+    fault: downstream-latency-and-timeout
+    acceptance:
+      ingressFalseAck: {operator: eq, value: 0}
+      recoveryBacklogMinutes: {operator: lte, value: 30}
+      retryBudgetViolation: {operator: eq, value: 0}
+  - id: REL-R02-ACK-001
+    description: deterministic crash before and after durability point
+    repetitionsPerCrashPoint: 3
+    acceptance:
+      ackWithoutRawAndLedger: {operator: eq, value: 0}
+      unrecoverableAcknowledgedEvent: {operator: eq, value: 0}
+      unexplainedDuplicateSideEffect: {operator: eq, value: 0}
+  - id: REL-R02-CP-001
+    description: Runtime Cell operates with Control Plane unavailable
+    durationHours: 4
+    acceptance:
+      activeFlowInterruptionSeconds: {operator: eq, value: 0}
+      unsignedConfigurationActivated: {operator: eq, value: 0}
+      unreconciledAuditEvent: {operator: eq, value: 0}
+  - id: REL-R02-OBS-001
+    description: telemetry backend outage and recovery
+    durationMinutes: 30
+    acceptance:
+      phiCanaryLeak: {operator: eq, value: 0}
+      silentTelemetryLoss: {operator: eq, value: 0}
+      tier0ProcessingInterruptionSeconds: {operator: eq, value: 0}
+
+globalAbortConditions:
+  - crossScopeEvent > 0
+  - acknowledgedEventWithoutDurabilityProof > 0
+  - rawChecksumMismatch > 0
+  - phiCanaryLeak > 0
+  - generatorUtilizationPercent > 60
+  - referenceEnvironmentDriftUnrecorded == true
+  - monitoringBlindnessSeconds > 60
+
+requiredTelemetry:
+  counters: [offered, received, accepted, durable, processed, delivered, acknowledged, pending, quarantined, terminally_failed, duplicates, retries]
+  histograms: [ingress_latency, durability_latency, processing_latency, delivery_latency, end_to_end_latency]
+  saturation: [cpu, cpu_throttle, memory, gc, threads, queue_depth, queue_age, db_connections, db_locks, db_replication_lag, object_store_latency, disk_latency, network_retransmits]
+  dimensionsAllowlist: [test_id, internal_tenant_bucket, facility_bucket, flow_id, connector_type, outcome, version]
+  forbiddenDimensions: [patient_id, encounter_id, accession_number, payload, token, secret]
+
+reconciliation:
+  equation: accepted=delivered+pending+quarantined+terminally_failed
+  duplicateAccounting: required
+  rawToLedgerJoin: required
+  deliveryReceiptVerification: required
+  zeroDifferenceRequired: true
+
+evidencePackage:
+  root: evidence/R0.2/G8/{testId}
+  requiredFiles:
+    - manifest.resolved.yml
+    - environment.resolved.yml
+    - artifact-digests.json
+    - raw-series/
+    - hdr-histograms/
+    - reconciliation.json
+    - fault-timeline.json
+    - saturation-summary.json
+    - phi-leakage-scan.json
+    - findings.yml
+    - verdict.json
+  signatures: [operator, oracle-owner, sre-witness]
+
+verdictRules:
+  passRequiresAllScenarioCriteria: true
+  criticalOrHighWithoutDisposition: FAIL
+  missingRawEvidence: INVALID
+  environmentDriftWithoutApproval: INVALID
+  bestRunSelection: forbidden
