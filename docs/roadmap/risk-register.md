@@ -1,7 +1,7 @@
 # Registro dei rischi
 
-Stato: baseline di programma 1.0  
-Data di riferimento: 1 settembre 2026  
+Stato: baseline di programma 1.1 — checkpoint WP1-00
+Data di riferimento: 10 settembre 2026
 Ambito: sviluppo, rilascio e operazione enterprise di HyperHealth Connect
 
 ## 1. Scopo
@@ -9,6 +9,12 @@ Ambito: sviluppo, rilascio e operazione enterprise di HyperHealth Connect
 Il registro identifica rischi che possono compromettere sicurezza del paziente, integrità dei dati, disponibilità, conformità, performance, costi, tempi o adozione. È un artefatto operativo: viene rivisto almeno mensilmente, a ogni release gate, dopo incidenti e quando cambiano standard, dipendenze o intended purpose.
 
 Un rischio non è “chiuso” perché esiste una mitigazione scritta. È chiuso soltanto quando il controllo è implementato, verificato e il rischio residuo è accettato dall'autorità competente.
+
+### Checkpoint WP1-00 — R0.2
+
+La mobilitazione R0.2 ha chiuso le decisioni su baseline tecnologica, transazione raw/ledger, ACK, idempotenza, ordering e bundle locale negli ADR-025–028. Il registro machine-readable `governance/risks.yml` aggiunge P1-R01…P1-R09 con owner, controllo e release gate.
+
+Il rischio aggregato della Fase 1 resta **alto** finché non esistono prove G3/G4/M2/M4/M5/G8. In particolare non sono accettati: ACK senza raw+ledger verificabili, evento cross-scope, side effect duplicato inspiegato, alterazione semantica non rilevata o PHI nei segnali/evidence. La modalità solo maintainer è registrata come P1-R09: consente il build, ma non sostituisce i reviewer indipendenti elencati nel RACI.
 
 ## 2. Metodo di valutazione
 

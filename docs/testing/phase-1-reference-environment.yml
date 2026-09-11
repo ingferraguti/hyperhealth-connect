@@ -1,0 +1,166 @@
+schemaVersion: 1
+manifestType: hhc-reference-environment
+status: BASELINED
+baseline: R0.2
+approvedAt: 2026-09-10
+owner: sre
+purpose: reproducible-performance-reliability-and-restore-qualification
+dataClassification: synthetic-only
+
+profiles:
+  developer:
+    qualifying: false
+    topology: single-host-compose
+    minimumHost:
+      architecture: x86_64
+      physicalCores: 8
+      memoryGiB: 32
+      storageGiB: 250
+      storageClass: local-ssd
+    limitations:
+      - no-ha-claim
+      - no-dr-claim
+      - no-capacity-claim
+      - no-security-boundary-claim
+
+  qualification:
+    qualifying: true
+    topology: three-failure-domain-kubernetes-plus-separate-generators
+    workloadIsolation:
+      generatorHosts: dedicated
+      verifierHost: dedicated
+      observabilityFailureDomain: separate-from-runtime
+      omopResources: separate-tier2-pool
+    runtimeNodes:
+      count: 3
+      architecture: x86_64
+      cpu:
+        physicalCoresPerNode: 16
+        simultaneousMultithreading: recorded-per-run
+        minimumBaseFrequencyGHz: 2.6
+        processorModel: recorded-per-run-no-burst-only-instance
+      memoryGiBPerNode: 64
+      storage:
+        usableGiBPerNode: 500
+        medium: enterprise-nvme
+        minimumSequentialReadMiBps: 1000
+        minimumSequentialWriteMiBps: 700
+        minimumRandomReadIops4KiB: 100000
+        minimumRandomWriteIops4KiB: 50000
+        maximumP99WriteLatencyMs4KiB: 2
+      network:
+        minimumGbps: 10
+        maximumRttMsWithinFailureDomain: 1
+        maximumRttMsAcrossFailureDomains: 3
+    statefulNodes:
+      count: 3
+      architecture: x86_64
+      physicalCoresPerNode: 16
+      memoryGiBPerNode: 64
+      usableNvmeGiBPerNode: 1000
+      networkGbps: 10
+      failureDomainPlacement: one-node-per-domain
+    generatorNodes:
+      count: 2
+      physicalCoresPerNode: 8
+      memoryGiBPerNode: 32
+      networkGbps: 10
+      utilizationCeilingPercent: 60
+    verifierNode:
+      count: 1
+      physicalCores: 8
+      memoryGiB: 32
+      networkGbps: 10
+
+software:
+  operatingSystem:
+    family: Linux
+    kernel: recorded-and-pinned-per-campaign
+    filesystem: xfs-or-ext4-with-options-recorded
+  containerRuntime: recorded-and-pinned-per-campaign
+  kubernetes: 1.36.4
+  java: 21.0.11+10
+  platformDatabase:
+    product: PostgreSQL
+    version: 18.6
+    image: postgres:18.6-bookworm
+    digest: sha256:1c59e2c3c818eaa0f0628f695b36e7c9e362d6b219b36a54a32df645cbd7e1af
+    qualificationTopology: one-writer-two-replicas-with-fencing
+  objectStore:
+    contract: S3-compatible-HHC-v0.2
+    referenceProduct: SeaweedFS
+    version: 4.46
+    image: chrislusf/seaweedfs:4.46
+    digest: sha256:08d516132314207d10c8e37cbffc1f32b147d870169688734cc61c6231625b62
+    qualificationTopology: three-master-three-volume-three-filer-one-per-domain
+  migrationTool:
+    product: Flyway Community
+    version: 13.5.0
+  oidcProvider:
+    product: Keycloak
+    version: 26.7.3
+    image: quay.io/keycloak/keycloak:26.7.3
+    digest: sha256:ff4257d0d64efbe99ed1ddfaf07765cc3c36dc7518bf8324d41961327f441c54
+    use: test-and-conformance-provider
+  telemetry:
+    collector:
+      product: OpenTelemetry Collector Contrib
+      version: 0.160.0
+      image: otel/opentelemetry-collector-contrib:0.160.0
+      digest: sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
+    metrics:
+      product: Prometheus
+      version: 3.14.0
+      image: prom/prometheus:v3.14.0
+      digest: sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    traces:
+      product: Jaeger
+      version: 2.20.0
+      image: jaegertracing/jaeger:2.20.0
+      digest: sha256:46a886260e04002d8f45e213fc39063fa11a50446048fdaa64786fc0840cb9f8
+
+topologyRules:
+  - control-plane-not-in-payload-fast-path
+  - runtime-replicas-spread-across-failure-domains
+  - stateful-quorum-spread-across-failure-domains
+  - database-single-writer-fenced
+  - raw-and-platform-db-backups-use-separate-credentials-and-failure-domain
+  - telemetry-outage-must-not-stop-tier0
+  - generator-and-verifier-must-not-share-runtime-resources
+  - network-policy-default-deny
+  - no-public-service-except-explicit-test-ingress
+
+preflight:
+  required:
+    - capture-cpu-model-microcode-and-smt
+    - capture-memory-numa-and-hugepage-settings
+    - run-fio-and-record-raw-output
+    - run-iperf3-pairwise-and-record-raw-output
+    - verify-ntp-offset-below-five-ms
+    - verify-image-digests-and-signatures
+    - verify-kubernetes-placement-and-resource-reservations
+    - verify-no-noisy-neighbor-during-run
+    - verify-synthetic-data-policy-and-phi-canaries
+    - verify-backup-and-abort-procedure
+
+environmentDrift:
+  immutableDuringCampaign: [hardware-class, kernel, container-runtime, kubernetes-patch, jvm, database, object-store, runtime-artifacts, flow-bundle, generator, verifier]
+  allowedOnlyWithNewBaseline: true
+  recordCommandsAndOutput: true
+
+enterpriseQualificationNotes:
+  - this-reference-environment-establishes-relative-R0.2-baseline-not-customer-sizing
+  - production-requires-workload-specific-capacity-with-n-plus-one-margin
+  - production-ha-bc-dr-claims-require-customer-topology-failover-restore-and-failback-evidence
+  - country-data-residency-and-key-management-are-deployment-specific-gates
+
+sourcesVerifiedAt: 2026-09-10
+sources:
+  - https://www.postgresql.org/docs/18/
+  - https://kubernetes.io/releases/1.36/
+  - https://github.com/seaweedfs/seaweedfs/releases/tag/4.46
+  - https://github.com/flyway/flyway/releases/tag/flyway-13.5.0
+  - https://github.com/keycloak/keycloak/releases/tag/26.7.3
+  - https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.160.0
+  - https://github.com/prometheus/prometheus/releases/tag/v3.14.0
+  - https://github.com/jaegertracing/jaeger/releases/tag/v2.20.0

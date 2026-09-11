@@ -1,0 +1,98 @@
+schemaVersion: 1
+baseline: R0.2
+baselinedAt: 2026-09-10
+source: docs/roadmap/phase-1-execution.md
+releaseOwner: program-engineering
+dataPolicy: synthetic-only
+epics:
+  - id: WP1-01
+    priority: P0
+    owner: platform-engineering
+    requirements: [FR-TEN-001, FR-TEN-002, FR-TEN-003, NFR-SEC-001, NFR-SCL-001]
+    useCases: [UC-CLIN-001, UC-SEC-01]
+    acceptanceTests: [tenant-isolation-matrix, migration-fresh-and-n-minus-one, oidc-negative-matrix]
+    evidence: evidence/R0.2/G2
+  - id: WP1-02
+    priority: P0
+    owner: runtime-engineering
+    requirements: [FR-EVT-001, FR-EVT-002, FR-EVT-003, NFR-BC-001, NFR-REL-001]
+    useCases: [UC-CLIN-002, UC-REL-01]
+    acceptanceTests: [durability-crash-matrix, s3-contract, raw-checksum-restore]
+    evidence: evidence/R0.2/G3
+  - id: WP1-03
+    priority: P0
+    owner: runtime-engineering
+    requirements: [FR-EVT-004, FR-EVT-005, FR-RPL-001, FR-RPL-002, NFR-REL-002]
+    useCases: [UC-OPS-003, UC-REL-02]
+    acceptanceTests: [idempotency-concurrency, retry-dlq-replay, reconciliation-invariant]
+    evidence: evidence/R0.2/G4
+  - id: WP1-04
+    priority: P0
+    owner: integration-runtime
+    requirements: [FR-CON-001, FR-CON-002, NFR-STD-001, NFR-MNT-001]
+    useCases: [UC-OPS-001, UC-CON-01]
+    acceptanceTests: [connector-contract, resource-drain, sdk-runtime-compatibility]
+    evidence: evidence/R0.2/G5
+  - id: WP1-05
+    priority: P0
+    owner: connector-engineering
+    requirements: [FR-CON-003, FR-CON-004, NFR-SEC-003, NFR-PERF-001]
+    useCases: [UC-CLIN-001, UC-CLIN-002, UC-CON-02]
+    acceptanceTests: [mllp-contract, rest-fhir-contract, malformed-oversized-fuzz-smoke]
+    evidence: evidence/R0.2/G6
+  - id: WP1-06
+    priority: P0
+    owner: runtime-release-engineering
+    requirements: [FR-FLW-001, FR-FLW-002, FR-FLW-003, FR-FLW-004, FR-MAP-001, NFR-AVL-002]
+    useCases: [UC-OPS-002, UC-OPS-006, UC-FLW-01]
+    acceptanceTests: [bundle-integrity, deploy-rollback, control-plane-outage-four-hours]
+    evidence: evidence/R0.2/G7
+  - id: WP1-07
+    priority: P0
+    owner: integration-delivery
+    requirements: [FR-CON-003, FR-FLW-001, FR-EVT-001, FR-EVT-004]
+    useCases: [UC-CLIN-001, UC-CLIN-002, UC-OPS-003]
+    acceptanceTests: [vertical-a-happy-and-negative, raw-to-receipt-lineage, replay-no-unexplained-side-effect]
+    evidence: evidence/R0.2/M1
+  - id: WP1-08
+    priority: P0
+    owner: clinical-informatics
+    requirements: [FR-SEM-001, FR-SEM-002, FR-SEM-003, FR-OMOP-001, FR-OMOP-002, NFR-STD-002]
+    useCases: [UC-CLIN-002, UC-DATA-001]
+    acceptanceTests: [semantic-golden-corpus, fhir-validation, omop-projection-reconciliation]
+    evidence: evidence/R0.2/M2
+  - id: WP1-09
+    priority: P0
+    owner: product-engineering
+    requirements: [FR-UI-001, FR-AUD-001, NFR-SEC-001, NFR-STD-004]
+    useCases: [UC-OPS-003, UC-OPS-007, UC-UI-01]
+    acceptanceTests: [ui-e2e-rbac, replay-reason-audit, accessibility-smoke]
+    evidence: evidence/R0.2/M3
+  - id: WP1-10
+    priority: P0
+    owner: security-observability-engineering
+    requirements: [FR-AUD-001, FR-AUD-002, FR-AUD-003, FR-OBS-001, FR-OBS-002, NFR-AUD-001, NFR-MON-001]
+    useCases: [UC-OPS-007, UC-SEC-02]
+    acceptanceTests: [audit-chain-verification, canary-phi-leakage, telemetry-outage-and-alert]
+    evidence: evidence/R0.2/M4
+  - id: WP1-11
+    priority: P0
+    owner: sre
+    requirements: [NFR-BC-001, NFR-DR-001, NFR-DR-002, NFR-REL-004, NFR-OPS-001]
+    useCases: [UC-OPS-002, UC-OPS-004, UC-OPS-006]
+    acceptanceTests: [clean-environment-rebuild, platform-db-restore, raw-store-restore, runbook-independent-operator]
+    evidence: evidence/R0.2/M5
+  - id: WP1-12
+    priority: P0
+    owner: quality-performance-engineering
+    requirements: [NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004, NFR-PERF-005, NFR-REL-001, NFR-SCL-001]
+    useCases: [UC-REL-01, UC-REL-02, PC-01, PC-02, PC-07, PC-08, PC-10]
+    acceptanceTests: [one-million-event-integrity, reference-throughput, fault-matrix, control-plane-autonomy]
+    evidence: evidence/R0.2/G8
+  - id: WP1-13
+    priority: P0
+    owner: release-engineering
+    requirements: [NFR-SUPPLY-001, NFR-MNT-002, NFR-STD-005]
+    useCases: [UC-OPS-006, UC-REL-03]
+    acceptanceTests: [clean-build, sbom-provenance-signature, install-upgrade-rollback, claim-review]
+    evidence: evidence/R0.2/G9
