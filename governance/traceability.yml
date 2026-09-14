@@ -51,9 +51,13 @@ items:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryHierarchyTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/RuntimeCellTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/ScopedInventoryServiceTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/api/ScopedEndpointControllerTest.java
       - planned/R0.2/G2/tenant-isolation-matrix
       - planned/R0.2/G2/oidc-negative-matrix
     deliveredEvidence: governance/platform-db-schema.yml
+    implementationRecord: docs/roadmap/phase-1-p1-0103-implementation.md
     evidence: evidence/R0.2/G2
     owner: platform-engineering
   - requirement: FR-EVT-001

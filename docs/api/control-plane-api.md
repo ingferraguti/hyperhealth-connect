@@ -4,7 +4,7 @@
 |---|---|
 | Stato | Baseline enterprise 1.0 |
 | Ambito | Governance HHC multitenant, multiazienda e multifacility |
-| Ultimo aggiornamento | 1 settembre 2026 |
+| Ultimo aggiornamento | 14 settembre 2026 |
 | Responsabili | Control Plane, Architecture, Security, SRE, Product Governance |
 | SLO | 99,9% mensile; RTO ≤4 ore; RPO ≤15 minuti |
 
@@ -162,6 +162,14 @@ POST           /api/v1/inventory-validation-jobs
 - endpoint address/credential reference sono redatti in list API;
 - produzione richiede owner, support group, data classification, residency, SLO tier e Runtime Cell;
 - decommission verifica flow, secret, audit, retention e dependency.
+
+### 7.3 Incremento P1-0103
+
+Il primo vertical slice implementato è `GET /api/v1/endpoints/{endpointId}`. Non è ancora la inventory API completa di P1-0106: prova il passaggio obbligatorio dello scope Tenant/Facility attraverso HTTP, service e repository PostgreSQL.
+
+Lo scope deriva esclusivamente da un attributo server-side tipizzato `VerifiedFacilityScope`. Header o query parameter inviati dal client non lo creano e non lo sovrascrivono. In assenza dell'attributo verificato la richiesta termina con `401` prima di invocare il repository. P1-0104 collegherà l'attributo a OIDC, grant e assegnazioni server-side; fino ad allora la feature resta disabilitata per default.
+
+Il lookup SQL include nella stessa statement preparata `tenant_id`, `facility_id` ed `endpoint_id`. Una risorsa assente, dismessa o appartenente ad altro scope produce lo stesso `404` e non attraversa il boundary API. Gli errori usano Problem Details, codice HHC stabile e correlation ID generato dal server; non includono SQL, endpoint interno o valori del record negato.
 
 ## 8. Catalogo asset
 

@@ -27,7 +27,7 @@ Le garanzie fondamentali non dipendono dalla sola correttezza del codice applica
 7. le assegnazioni di scope sono storicizzate e non sovrascritte;
 8. i principali access path scoped e operativi hanno indici dedicati e validati.
 
-Questo incremento non implementa repository, API, authorization OIDC/RBAC, audit journal o row-level security: appartengono rispettivamente a P1-0103, P1-0104, P1-0106, P1-0107 e P1-0108. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
+Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md); P1-0104, P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
 
 ## Artifact consegnati
 
@@ -66,7 +66,7 @@ La riga del ledger non viene cancellata. `allocated_at` e `decommissioned_at` co
 
 La duplicazione controllata dell'ancestry è intenzionale. Permette predicate scoped espliciti e indici left-prefix senza join preliminari, ma soprattutto fa sì che una Facility non possa riferire un'Organization appartenente a un altro Tenant. Lo stesso controllo si propaga fino a Endpoint.
 
-Ogni tabella espone `lifecycle_state`, `row_version`, `created_at`, `updated_at` e `decommissioned_at`. Lo stato appartiene al vocabolario chiuso `ACTIVE`, `SUSPENDED`, `DECOMMISSIONED`; quest'ultimo richiede un timestamp di dismissione, mentre gli altri lo vietano. `row_version` è predisposto per l'optimistic concurrency di P1-0106; il suo incremento atomico sarà responsabilità del repository scoped di P1-0103 e non viene simulato con un trigger implicito.
+Ogni tabella espone `lifecycle_state`, `row_version`, `created_at`, `updated_at` e `decommissioned_at`. Lo stato appartiene al vocabolario chiuso `ACTIVE`, `SUSPENDED`, `DECOMMISSIONED`; quest'ultimo richiede un timestamp di dismissione, mentre gli altri lo vietano. `row_version` è predisposto per l'optimistic concurrency di P1-0106; il suo incremento atomico sarà applicato dal futuro write path costruito sulla fondazione scoped di P1-0103 e non viene simulato con un trigger implicito.
 
 Display name vuoti o oltre 256 caratteri e sequenze temporali incoerenti sono rifiutati. I display name non sono chiavi e possono coincidere tra aziende o facility.
 
