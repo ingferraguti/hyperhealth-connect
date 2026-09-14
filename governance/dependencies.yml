@@ -29,6 +29,18 @@ dependencies:
     securityOwner: product-security
     licenseOwner: legal-open-source-office
     updateCadence: monthly-and-critical-cve
+  - id: spring-security
+    version: "7.1.1"
+    purpose: OIDC OAuth 2.0 Resource Server, JWT/JWKS validation and servlet authorization boundary
+    source: https://github.com/spring-projects/spring-security/releases/tag/7.1.1
+    license: Apache-2.0
+    lifecycleOwner: identity-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-as-spring-boot-4.1.1-managed-component-with-rs256-issuer-audience-and-client-validation
+    distributionDecision: embedded-runtime-library
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: aligned-with-spring-boot-and-critical-cve
   - id: apache-tomcat-embed
     version: "11.0.25"
     purpose: embedded HTTP and Servlet runtime for control plane and workers

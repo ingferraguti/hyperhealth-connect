@@ -45,6 +45,7 @@ items:
     controls: [CTRL-TENANT-001, CTRL-SECRET-001, CTRL-CONTRACT-001]
     implementation:
       - platform/control-plane/src/main/java/io/hyperhealth/connect/controlplane/inventory
+      - platform/control-plane/src/main/java/io/hyperhealth/connect/controlplane/security
       - platform/control-plane/src/main/resources/db/migration
     tests:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryIdTest.java
@@ -54,10 +55,19 @@ items:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/ScopedInventoryServiceTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/api/ScopedEndpointControllerTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcSecurityPropertiesTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/HhcOidcTokenValidatorTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcJwtDecoderTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcSecurityWebIntegrationTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcDisabledSecurityWebIntegrationTest.java
       - planned/R0.2/G2/tenant-isolation-matrix
-      - planned/R0.2/G2/oidc-negative-matrix
+      - delivered/P1-0104/oidc-core-negative-matrix
+      - planned/R0.2/G2/oidc-remote-rotation-revocation-outage-matrix
     deliveredEvidence: governance/platform-db-schema.yml
-    implementationRecord: docs/roadmap/phase-1-p1-0103-implementation.md
+    implementationRecord: docs/roadmap/phase-1-p1-0104-implementation.md
+    implementationHistory:
+      - docs/roadmap/phase-1-p1-0103-implementation.md
+      - docs/roadmap/phase-1-p1-0104-implementation.md
     evidence: evidence/R0.2/G2
     owner: platform-engineering
   - requirement: FR-EVT-001

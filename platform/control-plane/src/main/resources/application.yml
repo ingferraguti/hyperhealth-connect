@@ -14,6 +14,21 @@ server:
   shutdown: graceful
 
 hhc:
+  security:
+    oidc:
+      enabled: ${HHC_OIDC_ENABLED:false}
+      issuer-uri: ${HHC_OIDC_ISSUER_URI:}
+      jwk-set-uri: ${HHC_OIDC_JWK_SET_URI:}
+      jwk-connect-timeout: ${HHC_OIDC_JWK_CONNECT_TIMEOUT:2s}
+      jwk-read-timeout: ${HHC_OIDC_JWK_READ_TIMEOUT:2s}
+      human:
+        audience: ${HHC_OIDC_HUMAN_AUDIENCE:hhc-control-plane-human}
+        authorized-parties: ${HHC_OIDC_HUMAN_AUTHORIZED_PARTIES:hhc-control-plane-ui}
+        max-token-lifetime: ${HHC_OIDC_HUMAN_MAX_TOKEN_LIFETIME:10m}
+      workload:
+        audience: ${HHC_OIDC_WORKLOAD_AUDIENCE:hhc-control-plane-workload}
+        authorized-parties: ${HHC_OIDC_WORKLOAD_AUTHORIZED_PARTIES:hhc-runtime-agent}
+        max-token-lifetime: ${HHC_OIDC_WORKLOAD_MAX_TOKEN_LIFETIME:5m}
   inventory:
     enabled: ${HHC_INVENTORY_ENABLED:false}
   platform-database:
