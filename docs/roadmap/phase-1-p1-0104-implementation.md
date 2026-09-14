@@ -68,7 +68,7 @@ Sono accettati access token, non ID token. Il contratto minimo è:
 | header `alg` | stringa | esattamente `RS256`; nessun algoritmo simmetrico o `none` |
 | `iss` | URI | uguaglianza esatta con `HHC_OIDC_ISSUER_URI`; HTTPS |
 | `sub` | stringa | stabile e non vuota; non viene usato come patient identifier |
-| `iat` | NumericDate | obbligatorio; base per il limite massimo del lifetime |
+| `iat` | NumericDate | obbligatorio; non oltre 60 secondi nel futuro e base per il limite massimo del lifetime |
 | `exp` | NumericDate | obbligatorio, successivo a `iat`, non scaduto e dentro il lifetime del profilo |
 | `nbf` | NumericDate, se presente | il token non è accettato prima dell'istante valido |
 | `aud` | stringa/array standard | contiene l'audience del profilo e non quella dell'altro profilo |
@@ -145,6 +145,8 @@ Le liste sono configurabili come valori separati da virgola. I deployment manife
 
 L'ambiente deve fornire una truststore TLS qualificata, DNS resiliente e clock sincronizzato. URI HTTP, allowlist vuote, duplicati, audience condivisa o client presente in entrambi i profili impediscono l'avvio del boundary abilitato.
 
+Il clock skew accettato per `iat` è limitato a 60 secondi. Un token emesso oltre tale finestra futura viene rifiutato anche se `exp-iat` rispetta il TTL; la tolleranza non estende il lifetime configurato.
+
 ## 7. Comportamento operativo, HA e continuità
 
 - Il Resource Server è stateless: nessuna sessione HTTP e nessun affinity requirement; può scalare orizzontalmente dietro load balancer.
@@ -176,6 +178,7 @@ La rimozione anticipata può causare outage; una sovrapposizione indefinita prol
 | issuer diverso | 401 / `JwtException` | decoder reale |
 | token scaduto | 401 / `JwtException` | decoder reale + HTTP |
 | `iat`/`exp` assenti, invertiti o lifetime eccessivo | deny | validator |
+| `iat` oltre 60 secondi nel futuro | deny | validator con clock deterministico |
 | audience errata o del profilo opposto | 401 | validator + HTTP |
 | audience human e workload insieme | deny | validator |
 | `azp` non allowlisted o dell'altro profilo | deny | validator |

@@ -2,7 +2,9 @@ package io.hyperhealth.connect.controlplane.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,8 +14,11 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 class HhcOidcTokenValidatorTest {
 
+    private static final Instant NOW = Instant.parse("2026-09-14T12:00:00Z");
+
     private final OidcSecurityProperties properties = OidcSecurityPropertiesTest.validProperties();
-    private final HhcOidcTokenValidator validator = new HhcOidcTokenValidator(properties);
+    private final HhcOidcTokenValidator validator =
+            new HhcOidcTokenValidator(properties, Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void acceptsSeparatedHumanAndWorkloadProfiles() {
@@ -70,7 +75,7 @@ class HhcOidcTokenValidatorTest {
                 .header("alg", "RS256")
                 .issuer(properties.issuerUri())
                 .subject("synthetic-subject")
-                .issuedAt(Instant.now())
+                .issuedAt(NOW)
                 .audience(List.of("hhc-control-plane-human"))
                 .claim(HhcJwtClaims.PRINCIPAL_TYPE, PrincipalType.HUMAN.name())
                 .claim(HhcJwtClaims.ROLES, List.of("FacilityOperator"))
@@ -80,7 +85,7 @@ class HhcOidcTokenValidatorTest {
                 .build();
         assertThat(validate(withoutExpiry)).isFalse();
 
-        Instant issuedAt = Instant.now();
+        Instant issuedAt = NOW;
         Jwt excessiveLifetime = Jwt.withTokenValue("synthetic-token")
                 .header("alg", "RS256")
                 .issuer(properties.issuerUri())
@@ -95,6 +100,26 @@ class HhcOidcTokenValidatorTest {
                 .claim(HhcJwtClaims.FACILITY_ID, "f-" + UUID.randomUUID())
                 .build();
         assertThat(validate(excessiveLifetime)).isFalse();
+    }
+
+    @Test
+    void rejectsFutureIssuedAtBeyondTheBoundedClockSkew() {
+        Instant futureIssuedAt = NOW.plus(HhcOidcTokenValidator.ALLOWED_CLOCK_SKEW).plusSeconds(1);
+        Jwt futureToken = Jwt.withTokenValue("synthetic-token")
+                .header("alg", "RS256")
+                .issuer(properties.issuerUri())
+                .subject("synthetic-subject")
+                .issuedAt(futureIssuedAt)
+                .expiresAt(futureIssuedAt.plusSeconds(240))
+                .audience(List.of("hhc-control-plane-human"))
+                .claim(HhcJwtClaims.PRINCIPAL_TYPE, PrincipalType.HUMAN.name())
+                .claim(HhcJwtClaims.ROLES, List.of("FacilityOperator"))
+                .claim(HhcJwtClaims.AUTHORIZED_PARTY, "hhc-control-plane-ui")
+                .claim(HhcJwtClaims.TENANT_ID, "t-" + UUID.randomUUID())
+                .claim(HhcJwtClaims.FACILITY_ID, "f-" + UUID.randomUUID())
+                .build();
+
+        assertThat(validate(futureToken)).isFalse();
     }
 
     @Test
@@ -130,13 +155,12 @@ class HhcOidcTokenValidatorTest {
     }
 
     private Jwt.Builder baseToken() {
-        Instant now = Instant.now();
         return Jwt.withTokenValue("synthetic-token")
                 .header("alg", "RS256")
                 .issuer(properties.issuerUri())
                 .subject("synthetic-subject")
-                .issuedAt(now.minusSeconds(5))
-                .expiresAt(now.plusSeconds(240))
+                .issuedAt(NOW.minusSeconds(5))
+                .expiresAt(NOW.plusSeconds(240))
                 .claim(HhcJwtClaims.TENANT_ID, "t-" + UUID.randomUUID())
                 .claim(HhcJwtClaims.FACILITY_ID, "f-" + UUID.randomUUID());
     }

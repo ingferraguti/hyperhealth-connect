@@ -1,5 +1,6 @@
 package io.hyperhealth.connect.controlplane.security;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -12,13 +13,21 @@ import org.springframework.security.oauth2.jwt.Jwt;
 /** Validates audience/client separation and the strict HHC private-claim contract. */
 final class HhcOidcTokenValidator implements OAuth2TokenValidator<Jwt> {
 
+    static final Duration ALLOWED_CLOCK_SKEW = Duration.ofSeconds(60);
+
     private static final OAuth2Error INVALID_TOKEN = new OAuth2Error(
             "invalid_token", "The token does not satisfy the HHC identity contract", null);
 
     private final OidcSecurityProperties properties;
+    private final Clock clock;
 
     HhcOidcTokenValidator(OidcSecurityProperties properties) {
+        this(properties, Clock.systemUTC());
+    }
+
+    HhcOidcTokenValidator(OidcSecurityProperties properties, Clock clock) {
         this.properties = java.util.Objects.requireNonNull(properties, "properties");
+        this.clock = java.util.Objects.requireNonNull(clock, "clock");
     }
 
     @Override
@@ -36,6 +45,7 @@ final class HhcOidcTokenValidator implements OAuth2TokenValidator<Jwt> {
             if (issuedAt == null
                     || expiresAt == null
                     || !expiresAt.isAfter(issuedAt)
+                    || issuedAt.isAfter(Instant.now(clock).plus(ALLOWED_CLOCK_SKEW))
                     || Duration.between(issuedAt, expiresAt).compareTo(expected.maxTokenLifetime()) > 0) {
                 return OAuth2TokenValidatorResult.failure(INVALID_TOKEN);
             }
