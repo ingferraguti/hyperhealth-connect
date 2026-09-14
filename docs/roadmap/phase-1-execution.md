@@ -187,7 +187,7 @@ Attività:
 
 - P1-0101: **IMPLEMENTED** — ID immutabili e gerarchia Tenant/Organization/Facility/Application/Endpoint con Runtime Cell associata a scope espliciti; evidenza in [phase-1-p1-0101-implementation.md](phase-1-p1-0101-implementation.md);
 - P1-0102: **IMPLEMENTED** — schema PostgreSQL dell'inventory, migration forward-only e protocollo expand/migrate/contract, constraint di identità e ancestry, indici scoped concorrenti; evidenza in [phase-1-p1-0102-implementation.md](phase-1-p1-0102-implementation.md);
-- P1-0103: applicare tenant/facility scope in repository, service e API;
+- P1-0103: **IMPLEMENTED** — scope Tenant/Facility tipizzato e obbligatorio in repository, service e API; header client non autorevoli, lookup SQL scoped e risposta uniforme per risorsa assente/non visibile; evidenza in [phase-1-p1-0103-implementation.md](phase-1-p1-0103-implementation.md);
 - P1-0104: introdurre OIDC, ruoli minimi e workload identity separata;
 - P1-0105: implementare secret reference senza valore segreto nel database o negli export;
 - P1-0106: esporre API inventory con pagination, filtering, optimistic concurrency e idempotency;

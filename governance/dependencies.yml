@@ -190,6 +190,30 @@ dependencies:
     distributionDecision: embedded-runtime-library
     artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
     updateCadence: aligned-with-spring-boot-and-critical-cve
+  - id: spring-framework-jdbc
+    version: "7.0.9"
+    purpose: prepared-statement JDBC access for explicitly scoped Control Plane repositories
+    source: https://github.com/spring-projects/spring-framework/releases/tag/v7.0.9
+    license: Apache-2.0
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-as-spring-boot-4.1.1-managed-component
+    distributionDecision: embedded-runtime-library
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: aligned-with-spring-boot-and-critical-cve
+  - id: hikaricp
+    version: "7.0.2"
+    purpose: bounded JDBC connection pool for the Platform DB runtime path
+    source: https://github.com/brettwooldridge/HikariCP/releases/tag/HikariCP-7.0.2
+    license: Apache-2.0
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-platform-thread-profile-with-bounded-pool-and-timeouts
+    distributionDecision: embedded-runtime-library
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: aligned-with-spring-boot-and-critical-cve
   - id: keycloak
     version: "26.7.3"
     image: quay.io/keycloak/keycloak:26.7.3

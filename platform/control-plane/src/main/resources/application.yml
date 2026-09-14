@@ -13,3 +13,16 @@ management:
 server:
   shutdown: graceful
 
+hhc:
+  inventory:
+    enabled: ${HHC_INVENTORY_ENABLED:false}
+  platform-database:
+    jdbc-url: ${HHC_PLATFORM_DB_JDBC_URL:}
+    username: ${HHC_PLATFORM_DB_USERNAME:}
+    password: ${HHC_PLATFORM_DB_PASSWORD:}
+    maximum-pool-size: ${HHC_PLATFORM_DB_MAXIMUM_POOL_SIZE:20}
+    minimum-idle: ${HHC_PLATFORM_DB_MINIMUM_IDLE:2}
+    connection-timeout: ${HHC_PLATFORM_DB_CONNECTION_TIMEOUT:5s}
+    validation-timeout: ${HHC_PLATFORM_DB_VALIDATION_TIMEOUT:2s}
+    max-lifetime: ${HHC_PLATFORM_DB_MAX_LIFETIME:30m}
+    keepalive-time: ${HHC_PLATFORM_DB_KEEPALIVE_TIME:5m}

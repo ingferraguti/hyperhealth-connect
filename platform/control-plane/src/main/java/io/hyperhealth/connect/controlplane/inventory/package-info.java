@@ -1,7 +1,8 @@
 /**
- * Immutable identity and hierarchy model for the scoped control-plane inventory.
+ * Immutable identity, hierarchy, and explicitly scoped access path for the control-plane inventory.
  *
- * <p>This package intentionally contains no persistence, API, authorization, or audit behavior;
- * those capabilities are delivered by the subsequent WP1-01 activities.</p>
+ * <p>Persistence, service, and API reads require a tenant/facility scope. Authentication,
+ * authorization policy, mutations, and audit behavior are delivered by subsequent WP1-01
+ * activities.</p>
  */
 package io.hyperhealth.connect.controlplane.inventory;
