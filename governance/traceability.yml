@@ -1,6 +1,6 @@
 schemaVersion: 1
 baseline: phase-1-WP1-00
-reviewedAt: 2026-09-11
+reviewedAt: 2026-09-14
 items:
   - requirement: NFR-SEC-001
     decisions: [ADR-008, ADR-009]
@@ -45,12 +45,15 @@ items:
     controls: [CTRL-TENANT-001, CTRL-SECRET-001, CTRL-CONTRACT-001]
     implementation:
       - platform/control-plane/src/main/java/io/hyperhealth/connect/controlplane/inventory
+      - platform/control-plane/src/main/resources/db/migration
     tests:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryIdTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryHierarchyTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/RuntimeCellTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java
       - planned/R0.2/G2/tenant-isolation-matrix
       - planned/R0.2/G2/oidc-negative-matrix
+    deliveredEvidence: governance/platform-db-schema.yml
     evidence: evidence/R0.2/G2
     owner: platform-engineering
   - requirement: FR-EVT-001

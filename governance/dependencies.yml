@@ -1,5 +1,5 @@
 schemaVersion: 1
-reviewedAt: 2026-09-10
+reviewedAt: 2026-09-14
 policy: docs/development/dependency-and-license-policy.md
 dependencies:
   - id: temurin-jdk
@@ -154,6 +154,42 @@ dependencies:
     distributionDecision: embedded-build-and-runtime-library-commercial-modules-excluded
     artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
     updateCadence: monthly-review-and-critical-cve
+  - id: postgresql-jdbc
+    version: "42.7.13"
+    purpose: PostgreSQL wire-protocol driver used by the Control Plane migration runtime
+    source: https://github.com/pgjdbc/pgjdbc/releases/tag/REL42.7.13
+    license: BSD-2-Clause
+    lifecycleOwner: data-platform
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-runtime-driver-pinned-to-security-fixed-release
+    distributionDecision: embedded-runtime-library
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: monthly-review-and-critical-cve
+  - id: testcontainers
+    version: "2.0.5"
+    purpose: PostgreSQL 18 migration and constraint integration tests
+    source: https://github.com/testcontainers/testcontainers-java/releases/tag/2.0.5
+    license: MIT
+    lifecycleOwner: quality-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-test-scope-only-with-digest-pinned-postgresql-image
+    distributionDecision: build-and-test-only-not-in-runtime-image
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: monthly-review-and-critical-cve
+  - id: jackson-annotations
+    version: "2.22"
+    purpose: dependency convergence for the Flyway 13.5 runtime graph
+    source: https://github.com/FasterXML/jackson-annotations/releases/tag/jackson-annotations-2.22
+    license: Apache-2.0
+    lifecycleOwner: platform-engineering
+    securityOwner: product-security
+    licenseOwner: legal-open-source-office
+    securityDisposition: approved-annotations-only-version-convergence
+    distributionDecision: embedded-runtime-library
+    artifactDigestPolicy: resolved-artifacts-locked-and-verified-by-build
+    updateCadence: aligned-with-spring-boot-and-critical-cve
   - id: keycloak
     version: "26.7.3"
     image: quay.io/keycloak/keycloak:26.7.3

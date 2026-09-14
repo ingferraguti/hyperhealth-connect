@@ -45,6 +45,10 @@
     <spring-boot.version>4.1.1</spring-boot.version>
     <tomcat.version>11.0.25</tomcat.version>
     <camel.version>4.22.0</camel.version>
+    <flyway.version>13.5.0</flyway.version>
+    <jackson.annotations.version>2.22</jackson.annotations.version>
+    <postgresql.jdbc.version>42.7.13</postgresql.jdbc.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
     <maven.compiler.version>3.14.1</maven.compiler.version>
     <maven.surefire.version>3.5.4</maven.surefire.version>
     <maven.jar.version>3.4.2</maven.jar.version>
@@ -130,6 +134,36 @@
         <groupId>io.hyperhealth.connect</groupId>
         <artifactId>test-kit</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-core</artifactId>
+        <version>${flyway.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.annotations.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-database-postgresql</artifactId>
+        <version>${flyway.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${postgresql.jdbc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-postgresql</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-junit-jupiter</artifactId>
+        <version>${testcontainers.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
