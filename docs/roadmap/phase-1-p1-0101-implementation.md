@@ -36,7 +36,7 @@ Gli ID sono value object Java `record`, basati su UUID a 128 bit generati senza 
 
 I prefissi coincidono con il contratto `hhc-envelope/v1` definito in [Integration Envelope](../canonical-model/integration-envelope.md). Il parser rifiuta prefisso errato, UUID nil, UUID malformato e rappresentazione UUID non canonica. L'immutabilità è strutturale: non esistono setter o operazioni di sostituzione dell'ID e tutti i campi delle entità sono finali tramite `record`. I nomi visualizzati e gli identificativi sanitari locali non partecipano all'identità canonica.
 
-Il divieto persistente di riciclo dopo dismissione richiede tombstone/history e constraint del Platform DB: sarà applicato da P1-0102. P1-0101 non introduce una registry volatile che darebbe una garanzia falsa dopo restart o failover.
+Il divieto persistente di riciclo dopo dismissione è ora applicato dal ledger append-only e dai constraint del Platform DB introdotti da [P1-0102](phase-1-p1-0102-implementation.md). P1-0101 non aveva introdotto una registry volatile che avrebbe dato una garanzia falsa dopo restart o failover.
 
 ## Invarianti implementati
 
@@ -72,4 +72,4 @@ Esito dell'11 settembre 2026: `BUILD SUCCESS`; 13 test del Control Plane superat
 
 ## Confine deliberato
 
-Sono esclusi da questa modifica schema e migration SQL, repository e cache scoped, OIDC/RBAC, secret reference, API inventory, audit amministrativo, matrice negativa end-to-end, localizzazione e seed. Sono attività P1-0102…P1-0110 e non vengono anticipate per evitare dipendenze o garanzie parziali non qualificate.
+Al momento della consegna P1-0101 erano esclusi schema e migration SQL, repository e cache scoped, OIDC/RBAC, secret reference, API inventory, audit amministrativo, matrice negativa end-to-end, localizzazione e seed. Schema e migration sono stati successivamente completati da P1-0102; le attività P1-0103…P1-0110 restano fuori da quella modifica.

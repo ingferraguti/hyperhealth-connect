@@ -1,0 +1,23 @@
+schemaVersion: 1
+schema: platform_core
+databaseBaseline: PostgreSQL-18.6
+migrationEngine: Flyway-13.5.0
+generatedAt: 2026-09-14
+digestAlgorithm: SHA-256
+aggregateDigest: 201912426194d41b25d738d216419f3d40b036d96a21705de361cbea6b5ce39f
+aggregateCanonicalization: files-sorted-by-name-each-line-filename-space-lowercase-sha256-lf-terminated
+migrations:
+  - version: "001"
+    phase: expand
+    file: platform/control-plane/src/main/resources/db/migration/V001__expand__platform_core_inventory.sql
+    sha256: ed10bf88a30f8279299d0431b52033591883ae305cf7823cb9dc150b9e15328d
+  - version: "002"
+    phase: migrate-validate
+    file: platform/control-plane/src/main/resources/db/migration/V002__migrate__validate_inventory_constraints.sql
+    sha256: 9370ddf0ee882ca8bd9e76ba723d560907b90b438b71aeaea1370466f7b4bb93
+  - version: "003"
+    phase: expand-indexes
+    file: platform/control-plane/src/main/resources/db/migration/V003__expand__inventory_query_indexes.sql
+    sha256: 500cf03d564219652baf9d82646364fb8e939b83646568aff8d819a3b2e87414
+    configurationFile: platform/control-plane/src/main/resources/db/migration/V003__expand__inventory_query_indexes.sql.conf
+    configurationSha256: bb1a39a7dec8a7851648456a6522eb7d11694e13c37ba4bed844d1d7dc0d3a6b
