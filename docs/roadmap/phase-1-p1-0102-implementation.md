@@ -27,7 +27,7 @@ Le garanzie fondamentali non dipendono dalla sola correttezza del codice applica
 7. le assegnazioni di scope sono storicizzate e non sovrascritte;
 8. i principali access path scoped e operativi hanno indici dedicati e validati.
 
-Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md); P1-0104, P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
+Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md) e il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md); P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
 
 ## Artifact consegnati
 
@@ -229,7 +229,7 @@ La compatibilità dichiarata di questo incremento è PostgreSQL 18.x. Distribuzi
 | query applicativa dimentica lo scope | ancestry e indici predisposti | repository obbligatoriamente scoped in P1-0103 |
 | abuso di un ruolo DB privilegiato | constraint e trigger | separation of duties/grant nella deployment baseline |
 | modifica lifecycle non auditata | timestamp e stato persistiti | journal tamper-evident P1-0107 |
-| accesso cross-scope autorizzato male | ancestry fisica coerente | OIDC/RBAC e matrice negativa P1-0104/P1-0108 |
+| accesso cross-scope autorizzato male | ancestry fisica coerente | OIDC/RBAC core P1-0104; matrice estesa P1-0108 |
 | indice corretto ma piano inefficiente su scala | struttura left-prefix | benchmark e `EXPLAIN (ANALYZE, BUFFERS)` sul corpus P1-0110/G2 |
 | errore durante migration non transazionale | catalog validation e forward-only | runbook operativo e qualification failure/resume M5 |
 | perdita del writer o restore incompleto | schema ricreabile e checksum Flyway | HA/backup/PITR/restore qualification WP1-11 |

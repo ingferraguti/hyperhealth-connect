@@ -167,9 +167,24 @@ POST           /api/v1/inventory-validation-jobs
 
 Il primo vertical slice implementato è `GET /api/v1/endpoints/{endpointId}`. Non è ancora la inventory API completa di P1-0106: prova il passaggio obbligatorio dello scope Tenant/Facility attraverso HTTP, service e repository PostgreSQL.
 
-Lo scope deriva esclusivamente da un attributo server-side tipizzato `VerifiedFacilityScope`. Header o query parameter inviati dal client non lo creano e non lo sovrascrivono. In assenza dell'attributo verificato la richiesta termina con `401` prima di invocare il repository. P1-0104 collegherà l'attributo a OIDC, grant e assegnazioni server-side; fino ad allora la feature resta disabilitata per default.
+Lo scope deriva esclusivamente da un attributo server-side tipizzato `VerifiedFacilityScope`. Header o query parameter inviati dal client non lo creano e non lo sovrascrivono. P1-0104 ha collegato l'attributo a un access token OIDC verificato; la configurazione resta disabilitata per default e deny-all finché non viene fornito un trust profile completo.
 
 Il lookup SQL include nella stessa statement preparata `tenant_id`, `facility_id` ed `endpoint_id`. Una risorsa assente, dismessa o appartenente ad altro scope produce lo stesso `404` e non attraversa il boundary API. Gli errori usano Problem Details, codice HHC stabile e correlation ID generato dal server; non includono SQL, endpoint interno o valori del record negato.
+
+### 7.4 Incremento P1-0104 — OIDC e workload identity
+
+Il vertical slice è protetto da un OAuth 2.0 Resource Server stateless. Il decoder accetta soltanto JWT firmati `RS256`, verifica `iss`, `exp`, `nbf`, audience, `azp` e i claim privati HHC. `issuer-uri` e `jwk-set-uri` sono HTTPS e configurati separatamente: il servizio non dipende dalla discovery OIDC allo startup e usa timeout bounded per il recupero JWKS.
+
+I profili non sono intercambiabili:
+
+| Profilo | Audience default | Client default | Ruoli riconosciuti nel slice |
+|---|---|---|---|
+| human | `hhc-control-plane-human` | `hhc-control-plane-ui` | `FacilityOperator`, `Auditor`, `FlowDeveloper` |
+| workload | `hhc-control-plane-workload` | `hhc-runtime-agent` | `RuntimeAgent` |
+
+Audience e allowlist client devono essere disgiunte. `FacilityOperator`, `Auditor` e `RuntimeAgent` producono la capability interna `HHC_INVENTORY_READ`; `FlowDeveloper` dimostra la distinzione autenticazione/autorizzazione e riceve 403. Ruoli sconosciuti, duplicati o appartenenti all'altro profilo invalidano il token.
+
+`hhc_tenant_id` e `hhc_facility_id` devono essere ID canonici firmati. Prima di proseguire il filtro rimuove qualsiasi request attribute già presente e ricostruisce lo scope dall'identità autenticata. 401 e 403 sono Problem Details uniformi con `Cache-Control: no-store`; nessun dettaglio del token o del validator viene esposto. Il contratto completo, le variabili operative e la matrice di verifica sono in [phase-1-p1-0104-implementation.md](../roadmap/phase-1-p1-0104-implementation.md).
 
 ## 8. Catalogo asset
 
@@ -619,12 +634,15 @@ Il sito primario è indisponibile e la replica potrebbe essere stale.
 
 ## 28. Fonti ufficiali e data di verifica
 
-Fonti verificate il **1 settembre 2026**:
+Fonti verificate o riconfermate il **14 settembre 2026**:
 
 - OpenAPI Specification 3.2.0: <https://spec.openapis.org/oas/v3.2.0.html>
 - RFC 9110 HTTP Semantics: <https://www.rfc-editor.org/rfc/rfc9110.html>
 - RFC 9457 Problem Details: <https://www.rfc-editor.org/rfc/rfc9457.html>
 - RFC 9700 OAuth 2.0 Security BCP: <https://www.rfc-editor.org/rfc/rfc9700.html>
+- RFC 8725 JSON Web Token Best Current Practices: <https://www.rfc-editor.org/rfc/rfc8725.html>
+- OpenID Connect Core 1.0: <https://openid.net/specs/openid-connect-core-1_0-final.html>
+- Spring Security JWT Resource Server: <https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html>
 - RFC 9745 Deprecation: <https://www.rfc-editor.org/rfc/rfc9745.html>
 - AsyncAPI 3.1.0: <https://www.asyncapi.com/docs/reference/specification/latest>
 - CloudEvents 1.0.2: <https://github.com/cloudevents/spec>

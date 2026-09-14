@@ -3,7 +3,7 @@
 | Campo | Valore |
 |---|---|
 | Stato | Baseline enterprise 1.0 |
-| Ultimo aggiornamento | 5 settembre 2026 |
+| Ultimo aggiornamento | 14 settembre 2026 |
 | Owner | Identity & Access e Security Architecture |
 
 ## 1. Modello di scope
@@ -75,6 +75,12 @@ Obligations possono richiedere redaction, masking, step-up, double approval, wat
 API gateway valida token e costruisce immutable security context. Chiamate interne propagano signed context o rivalutano con workload identity e resource scope. Messaggi/eventi portano tenant/facility nel metadata firmato; consumer confronta topic/queue/storage scope. Header client non sovrascrive il contesto.
 
 Async job conserva initiator, purpose, policy version e delega; non continua oltre revoca/expiry se la policy lo vieta.
+
+### 6.1 Boundary implementato in P1-0104
+
+Il Control Plane usa access token JWT OIDC verificati con firma `RS256`, issuer HTTPS, lifetime, audience e authorized party. Human e workload hanno audience, client allowlist e namespace di ruolo disgiunti; una commistione invalida il token. I claim `hhc_tenant_id` e `hhc_facility_id` devono contenere ID canonici e producono `VerifiedFacilityScope` solo dopo tutte le verifiche.
+
+Nel vertical slice inventory i ruoli human `FacilityOperator` e `Auditor` e il ruolo workload `RuntimeAgent` mappano a `HHC_INVENTORY_READ`; `FlowDeveloper` è riconosciuto ma non riceve tale capability. Gruppi, scope OAuth generici e header client non diventano authority. Il filtro server-side rimuove scope preesistenti prima di installare quello firmato. Configurazione assente, JWKS non verificabile, ruolo sconosciuto o policy indeterminata falliscono chiusi. Dettagli, limiti e test sono in [P1-0104](../roadmap/phase-1-p1-0104-implementation.md).
 
 ## 7. Isolamento per layer
 
@@ -182,13 +188,17 @@ Ricerca approvata usa dataset derivato e token scoped al purpose; join non autor
 
 ## 19. Fonti
 
-Verificate il **5 settembre 2026**:
+Verificate o riconfermate il **14 settembre 2026**:
 
 - [NIST SP 800-207 — Zero Trust](https://csrc.nist.gov/pubs/sp/800/207/final);
 - [NIST SP 800-207A — Cloud-native access control](https://csrc.nist.gov/pubs/sp/800/207/a/final);
 - [OWASP ASVS 5.0.0](https://owasp.org/www-project-application-security-verification-standard/);
 - [OWASP API Security Top 10](https://owasp.org/API-Security/);
-- [Kubernetes Multi-tenancy](https://kubernetes.io/docs/concepts/security/multi-tenancy/).
+- [Kubernetes Multi-tenancy](https://kubernetes.io/docs/concepts/security/multi-tenancy/);
+- [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0-final.html);
+- [RFC 9700 — OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700.html);
+- [RFC 8725 — JWT Best Current Practices](https://www.rfc-editor.org/rfc/rfc8725.html);
+- [Spring Security — JWT Resource Server](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html).
 
 ## 20. Collegamenti
 

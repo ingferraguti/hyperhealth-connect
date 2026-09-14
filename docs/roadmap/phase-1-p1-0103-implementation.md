@@ -34,7 +34,7 @@ Il vertical slice legge un Endpoint perché è il livello più profondo della ge
 7. risorsa inesistente, dismessa o esterna allo scope produce la stessa risposta `404`;
 8. una response negata non contiene ID, display name o altri campi della risorsa richiesta;
 9. gli errori sono Problem Details con codice stabile, correlation ID server-side e nessun dettaglio SQL;
-10. il pool JDBC è bounded e la feature è fail-closed/disabilitata fino alla disponibilità del boundary OIDC di P1-0104.
+10. il pool JDBC è bounded e, alla consegna di P1-0103, la feature era fail-closed/disabilitata in attesa del boundary OIDC poi realizzato da P1-0104.
 
 ## Contratto dello scope
 
@@ -42,7 +42,7 @@ Il vertical slice legge un Endpoint perché è il livello più profondo della ge
 
 `VerifiedFacilityScopeArgumentResolver` cerca il valore in un attributo request interno identificato dal nome canonico della classe. Non legge `X-Tenant-ID`, `X-Facility-ID` o equivalenti. Un client HTTP non può impostare un request attribute del servlet; gli header omonimi restano dati non autorevoli e vengono ignorati.
 
-P1-0104 realizzerà il producer dell'attributo tramite OIDC/workload identity e confronterà i grant con l'inventory. Fino a quel momento `hhc.inventory.enabled=false` è il default: l'applicazione si avvia, ma non pubblica accidentalmente il controller scoped privo di autenticazione.
+[P1-0104](phase-1-p1-0104-implementation.md) ha successivamente realizzato il producer dell'attributo tramite OIDC/workload identity. `hhc.inventory.enabled=false` e `hhc.security.oidc.enabled=false` restano default indipendenti: l'API è deny-all finché non viene configurato un trust profile completo, e il controller inventory non viene pubblicato finché il relativo vertical slice non è abilitato.
 
 ## Repository
 
@@ -151,14 +151,14 @@ Tutti i fixture sono marcati `HHC-SYNTHETIC`. Il test PostgreSQL usa la stessa i
 
 Non sono inclusi:
 
-- autenticazione OIDC, RBAC/ABAC e workload identity, previsti da P1-0104;
+- autenticazione OIDC, RBAC minimo e workload identity, successivamente introdotti da P1-0104; l'ABAC completo resta nei work item di policy/authorization successivi;
 - secret reference e rotazione, previsti da P1-0105;
 - create/update/decommission, collection, pagination, ETag e idempotenza, previsti da P1-0106;
 - audit journal, previsto da P1-0107;
 - matrice negativa per ogni risorsa/layer e RLS defense-in-depth, prevista da P1-0108;
 - seed e benchmark su scala, previsti da P1-0110.
 
-P1-0103 non chiude Gate G2 e non rende pubblicamente utilizzabile l'API senza P1-0104.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato, ma G2 rimane aperto fino al completamento di P1-0105…P1-0110 e della qualification prevista.
 
 ## Fonti ufficiali
 

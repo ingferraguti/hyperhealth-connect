@@ -8,8 +8,8 @@ import io.hyperhealth.connect.controlplane.inventory.InventoryId.TenantId;
 /**
  * Immutable tenant and facility scope established by a trusted server-side boundary.
  *
- * <p>The HTTP layer never constructs this value from tenant or facility headers. P1-0104 will
- * derive it from authenticated grants and server-side inventory assignments.</p>
+ * <p>The HTTP layer never constructs this value from tenant or facility headers. The OIDC security
+ * boundary derives it only from cryptographically verified, audience-bound claims.</p>
  */
 public record VerifiedFacilityScope(TenantId tenantId, FacilityId facilityId) {
     public VerifiedFacilityScope {
