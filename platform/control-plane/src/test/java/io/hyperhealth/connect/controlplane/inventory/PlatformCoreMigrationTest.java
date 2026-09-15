@@ -46,7 +46,7 @@ class PlatformCoreMigrationTest {
     void migratesAndValidatesAnEmptyPostgresql18Database() throws SQLException {
         Flyway flyway = flyway(null);
 
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(3);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(4);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
 
         assertThat(queryStrings("""
@@ -65,6 +65,8 @@ class PlatformCoreMigrationTest {
                         "resource_identity",
                         "runtime_cell",
                         "runtime_cell_scope_assignment",
+                        "secret_reference",
+                        "endpoint_secret_binding",
                         "tenant");
         assertThat(queryLong("""
                 SELECT count(*)
@@ -97,6 +99,9 @@ class PlatformCoreMigrationTest {
                         "ix_runtime_cell_active_updated",
                         "ix_runtime_cell_scope_by_cell_history",
                         "ix_runtime_cell_scope_lookup_active",
+                        "ix_secret_reference_scope_state",
+                        "ix_endpoint_secret_binding_reference_active",
+                        "uq_endpoint_secret_binding_active",
                         "uq_runtime_cell_scope_assignment_active");
     }
 
@@ -107,7 +112,7 @@ class PlatformCoreMigrationTest {
         allocate(tenantId, "TENANT");
         execute("INSERT INTO platform_core.tenant (tenant_id, display_name) VALUES (?, ?)", tenantId, "Synthetic Tenant");
 
-        assertThat(flyway(null).migrate().migrationsExecuted).isEqualTo(2);
+        assertThat(flyway(null).migrate().migrationsExecuted).isEqualTo(3);
         assertThat(queryLong("SELECT count(*) FROM platform_core.tenant WHERE tenant_id = '" + tenantId + "'::uuid"))
                 .isEqualTo(1L);
         assertThat(flyway(null).validateWithResult().validationSuccessful).isTrue();
@@ -214,6 +219,90 @@ class PlatformCoreMigrationTest {
                     .isEqualTo("23514");
             connection.rollback();
         }
+    }
+
+    @Test
+    void secretReferenceSchemaAcceptsOnlyOpaqueTypedMetadata() throws SQLException {
+        flyway(null).migrate();
+        UUID tenantId = createTenant("Synthetic Secret Tenant");
+        UUID organizationId = createOrganization(tenantId, "Synthetic Secret Organization");
+        UUID facilityId = createFacility(tenantId, organizationId, "Synthetic Secret Facility");
+        UUID referenceId = UUID.randomUUID();
+        UUID backendBindingId = UUID.randomUUID();
+
+        execute("""
+                INSERT INTO platform_core.secret_reference
+                    (secret_reference_id, tenant_id, organization_id, facility_id,
+                     provider_kind, backend_binding_id, purpose)
+                VALUES (?, ?, ?, ?, 'HASHICORP_VAULT', ?, 'ENDPOINT_API_TOKEN')
+                """, referenceId, tenantId, organizationId, facilityId, backendBindingId);
+
+        assertThat(queryStrings("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'platform_core'
+                  AND table_name = 'secret_reference'
+                ORDER BY ordinal_position
+                """))
+                .containsExactly(
+                        "secret_reference_id",
+                        "tenant_id",
+                        "organization_id",
+                        "facility_id",
+                        "provider_kind",
+                        "backend_binding_id",
+                        "purpose",
+                        "reference_state",
+                        "row_version",
+                        "created_at",
+                        "updated_at",
+                        "revoked_at")
+                .doesNotContain(
+                        "secret_value",
+                        "value",
+                        "payload",
+                        "ciphertext",
+                        "password",
+                        "token",
+                        "private_key",
+                        "certificate",
+                        "provider_path");
+
+        assertSqlState("23514", () -> execute("""
+                INSERT INTO platform_core.secret_reference
+                    (secret_reference_id, tenant_id, organization_id, facility_id,
+                     provider_kind, backend_binding_id, purpose)
+                VALUES (?, ?, ?, ?, ?, ?, 'ENDPOINT_API_TOKEN')
+                """,
+                UUID.randomUUID(),
+                tenantId,
+                organizationId,
+                facilityId,
+                "SYNTHETIC_SECRET_VALUE_CANNOT_BE_STORED",
+                UUID.randomUUID()));
+        assertSqlState("23000", () -> execute(
+                "UPDATE platform_core.secret_reference SET backend_binding_id = ? WHERE secret_reference_id = ?",
+                UUID.randomUUID(),
+                referenceId));
+        assertSqlState("23000", () -> execute(
+                "DELETE FROM platform_core.secret_reference WHERE secret_reference_id = ?", referenceId));
+
+        execute("""
+                UPDATE platform_core.secret_reference
+                   SET reference_state = 'REVOKED',
+                       revoked_at = transaction_timestamp(),
+                       updated_at = transaction_timestamp(),
+                       row_version = row_version + 1
+                 WHERE secret_reference_id = ?
+                """, referenceId);
+        assertSqlState("23514", () -> execute("""
+                UPDATE platform_core.secret_reference
+                   SET reference_state = 'ACTIVE',
+                       revoked_at = NULL,
+                       updated_at = transaction_timestamp(),
+                       row_version = row_version + 1
+                 WHERE secret_reference_id = ?
+                """, referenceId));
     }
 
     private static Flyway flyway(String target) {

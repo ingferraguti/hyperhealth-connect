@@ -27,7 +27,7 @@ Le garanzie fondamentali non dipendono dalla sola correttezza del codice applica
 7. le assegnazioni di scope sono storicizzate e non sovrascritte;
 8. i principali access path scoped e operativi hanno indici dedicati e validati.
 
-Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md) e il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md); P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
+Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, secret reference, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md), il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md) e le secret reference scoped da [P1-0105](phase-1-p1-0105-implementation.md). P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
 
 ## Artifact consegnati
 
@@ -37,6 +37,7 @@ Al momento della consegna questo incremento non implementava repository, API, au
 | `V002__migrate__validate_inventory_constraints.sql` | valida in modo esplicito tutti i constraint aggiunti nella fase expand |
 | `V003__expand__inventory_query_indexes.sql` | crea gli indici operativi con `CREATE INDEX CONCURRENTLY` |
 | `V003__expand__inventory_query_indexes.sql.conf` | esegue V003 fuori da una transaction block, come richiesto da PostgreSQL |
+| `V004__expand__scoped_secret_references.sql` | aggiunta P1-0105: reference e binding Endpoint scoped, senza valore o locator provider, con indici e lifecycle di revoca |
 | `PlatformCoreMigrationTest` | prova fresh install, upgrade N-1, catalogo, constraint, immutabilità e Runtime Cell su PostgreSQL reale |
 | `governance/platform-db-schema.yml` | pubblica digest aggregato e SHA-256 di migration/configurazione per evidenza e drift detection |
 | `scripts/phase1-p1-0102-gate.ps1` | verifica policy, naming, DDL non distruttivo e digest; produce evidenza JSON in CI |
@@ -118,6 +119,9 @@ La cancellazione operativa usa la transizione a `DECOMMISSIONED`; la revoca di u
 | `ix_runtime_cell_scope_by_cell_history` | cella, creazione, sequenza | storia completa delle assegnazioni |
 | `ix_runtime_cell_scope_lookup_active` | ancestry, cella; solo attivi | risoluzione delle celle autorizzate per scope |
 | `uq_runtime_cell_scope_assignment_active` | cella, livello e ancestry; `NULLS NOT DISTINCT` | unicità dell'assegnazione attiva |
+| `ix_secret_reference_scope_state` | Tenant, Facility, stato, reference; covering | lookup scoped delle reference utilizzabili P1-0105 |
+| `uq_endpoint_secret_binding_active` | ancestry Endpoint, purpose, reference; solo attivi | unicità del binding corrente con overlap fra reference differenti |
+| `ix_endpoint_secret_binding_reference_active` | Tenant, Facility, reference, Endpoint; solo attivi | risoluzione/revoca dei binding correnti |
 
 Gli indici scoped seguono la gerarchia dal Tenant verso il livello più specifico. I campi `display_name` e `row_version` sono inclusi negli indici di lettura per consentire piani covering quando la visibilità della pagina lo permette. Le clausole parziali escludono risorse dismesse dagli access path correnti senza rimuoverle dallo storico.
 
@@ -133,7 +137,7 @@ Gli indici applicativi sono creati `CONCURRENTLY`: PostgreSQL non consente quest
 4. creare indici voluminosi in modo concorrente e monitorare progress, replica lag, WAL e durata;
 5. non cambiare il significato di una colonna usata in-place.
 
-V001 e V003 realizzano questa fase per uno schema greenfield. La creazione delle tabelle resta transazionale; la costruzione concorrente degli indici è deliberatamente separata.
+V001 e V003 realizzavano questa fase per lo schema inventory greenfield. V004 aggiunge su tabelle nuove le secret reference di P1-0105. La creazione delle tabelle resta transazionale; la costruzione concorrente degli indici inventory è deliberatamente separata.
 
 ### Migrate e validate
 
@@ -143,7 +147,7 @@ V001 e V003 realizzano questa fase per uno schema greenfield. La creazione delle
 4. confrontare conteggi, checksum logiche e invarianti prima/dopo;
 5. mantenere compatibilità di lettura e scrittura durante rolling update e failover.
 
-V002 è la fase di validazione. In P1-0102 non serve backfill perché lo schema è nuovo; il test N-1 inserisce comunque una risorsa dopo V001 e dimostra che V002/V003 la preservano.
+V002 è la fase di validazione della baseline P1-0102. Non serviva backfill perché lo schema era nuovo; il test N-1 inserisce comunque una risorsa dopo V001 e dimostra che V002/V003/V004 la preservano.
 
 ### Contract
 
@@ -181,17 +185,18 @@ La presenza di `IF NOT EXISTS` sugli indici limita gli errori di retry, ma non s
 
 | Scenario | Oracle |
 |---|---|
-| fresh database | applicate esattamente V001–V003; Flyway validate verde |
+| fresh database | applicate esattamente V001–V004; Flyway validate verde |
 | catalogo | tutte le tabelle attese presenti; nessun constraint non validato; nessun indice invalido; tutti gli indici applicativi attesi presenti |
-| upgrade N-1 | database fermo a V001 con Tenant sintetico; V002/V003 completano senza perdita della riga |
+| upgrade N-1 | database fermo a V001 con Tenant sintetico; V002/V003/V004 completano senza perdita della riga |
 | ancestry valida | gerarchia sintetica completa fino a Endpoint accettata |
 | cross-tenant | Facility collegata a Organization di altro Tenant rifiutata con FK violation |
 | type confusion | UUID Tenant usato come Organization rifiutato |
 | immutabilità | modifica ID e hard delete rifiutati |
 | Runtime Cell | cella più scope nella stessa transazione accettati; cella priva di scope negata al commit |
 | scope shape/duplicate | shape incoerente, duplicato attivo e revoca dell'ultimo scope rifiutati |
+| secret reference P1-0105 | catalogo a colonne allowlisted, enum/UUID/ancestry validati, binding immutabile, hard delete rifiutato |
 
-Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0103–P1-0110 e le relative matrici non sono concluse.
+Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0106–P1-0110 e le relative matrici non sono concluse.
 
 ## Configurazione operativa minima
 
@@ -226,7 +231,7 @@ La compatibilità dichiarata di questo incremento è PostgreSQL 18.x. Distribuzi
 
 | Rischio | Controllo presente | Chiusura prevista |
 |---|---|---|
-| query applicativa dimentica lo scope | ancestry e indici predisposti | repository obbligatoriamente scoped in P1-0103 |
+| query applicativa dimentica lo scope | repository scoped consegnati da P1-0103/P1-0105 | matrice completa P1-0108 |
 | abuso di un ruolo DB privilegiato | constraint e trigger | separation of duties/grant nella deployment baseline |
 | modifica lifecycle non auditata | timestamp e stato persistiti | journal tamper-evident P1-0107 |
 | accesso cross-scope autorizzato male | ancestry fisica coerente | OIDC/RBAC core P1-0104; matrice estesa P1-0108 |

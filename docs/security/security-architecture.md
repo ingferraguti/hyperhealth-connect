@@ -86,7 +86,9 @@ Operazioni rafforzate: raw/PHI view, replay, export, mapping approval, release, 
 
 Dati in transito e at rest sono cifrati con algoritmi e key length approvati dalla crypto policy corrente. Key hierarchy separa environment e, secondo rischio, tenant/store/purpose. Envelope encryption limita blast radius. Rotation, revocation, backup e recovery delle chiavi sono runbook testati.
 
-Password non sono gestite dal prodotto salvo componenti identity dedicati. Secret sono reference a vault, mai in config/export/log. Hash/checksum di integrità non sostituisce MAC/firma dove è richiesta autenticità.
+Password non sono gestite dal prodotto salvo componenti identity dedicati. Secret sono reference a vault, mai in config, Platform DB, export o log. Hash/checksum di integrità non sostituisce MAC/firma dove è richiesta autenticità.
+
+La baseline P1-0105 usa un ID logico `sref-<uuid>` e conserva soltanto scope, provider family, purpose, stato, versione e un binding locale UUID opaco. Il binding non è un path e non entra negli export; la projection impone `requiresRebinding=true`. Valore, ciphertext, hash del valore, ARN/resource name/vault URI e versione provider sono esclusi per costruzione. Il resolver e il valore restano nella Runtime Cell, sotto workload identity e policy del secret manager. Reference diverse dello stesso purpose supportano overlap di rotazione; `REVOKED` è escluso dalle viste runtime. Audit del lifecycle, provider adapter, expiry e rotazione automatica end-to-end restano gate successivi e non sono dichiarati consegnati da questa baseline.
 
 ## 9. Application e API security
 

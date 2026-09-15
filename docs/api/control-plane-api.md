@@ -186,6 +186,14 @@ Audience e allowlist client devono essere disgiunte. `FacilityOperator`, `Audito
 
 `hhc_tenant_id` e `hhc_facility_id` devono essere ID canonici firmati. Prima di proseguire il filtro rimuove qualsiasi request attribute già presente e ricostruisce lo scope dall'identità autenticata. 401 e 403 sono Problem Details uniformi con `Cache-Control: no-store`; nessun dettaglio del token o del validator viene esposto. Il contratto completo, le variabili operative e la matrice di verifica sono in [phase-1-p1-0104-implementation.md](../roadmap/phase-1-p1-0104-implementation.md).
 
+### 7.5 Incremento P1-0105 — secret reference scoped
+
+Il modello persistence introduce `SecretReferenceId` canonico `sref-<uuid>`, provider/purpose/stato a vocabolario chiuso e un binding locale UUID opaco. Non esistono colonne o proprietà per valore, ciphertext, hash, certificato, provider path, ARN o vault URI. Tenant, Organization e Facility sono derivati dal record Facility già scoped; i binding verso Endpoint verificano l'intera ancestry.
+
+La projection portabile espone soltanto ID logico, provider family, purpose, stato, `rowVersion` e `requiresRebinding=true`. Omette anche il binding locale: un restore o una promozione tra ambienti non può riutilizzare implicitamente il secret di origine. Due reference dello stesso purpose possono convivere durante una rotazione; una reference revocata è esclusa dalle viste utilizzabili.
+
+P1-0105 non espone ancora route HTTP di gestione. Le API CRUD, idempotenza, ETag, property authorization e command asincroni appartengono a P1-0106 e dovranno conservare questo contratto senza introdurre campi liberi capaci di trasportare materiale segreto. Specifica ed evidenze sono in [phase-1-p1-0105-implementation.md](../roadmap/phase-1-p1-0105-implementation.md).
+
 ## 8. Catalogo asset
 
 Il catalogo espone:
@@ -368,15 +376,17 @@ Explain API è autorizzata, redatta e auditata; non rivela policy di altri tenan
 
 ## 15. Secret reference e trust API
 
-Il Control Plane gestisce metadata:
+Il Control Plane gestisce metadata. La baseline P1-0105 già implementata conserva:
 
-- provider/secret path reference opaco;
-- target scope e workload binding;
-- owner, rotation/expiry e last validation;
-- certificate subject/SAN/purpose senza private key;
-- trust bundle version e revocation status.
+- ID logico `sref-<uuid>` immutabile;
+- provider family, purpose e lifecycle a vocabolario chiuso;
+- target Tenant/Organization/Facility ed Endpoint binding con ancestry verificata;
+- binding locale UUID opaco, mai esportato e privo di locator provider;
+- versione ottimistica e timestamp tecnici.
 
-Non accetta secret in JSON, query, log o artifact. La creazione del valore avviene nel secret manager o con one-time secure exchange. Runtime risolve localmente con identity autorizzata.
+Owner, expiry, last validation, certificate subject/SAN, trust bundle version e policy di revocation saranno estensioni additive. Non devono diventare contenitori liberi per valori o locator.
+
+Non accetta secret in JSON, query, log, Platform DB o artifact. La creazione del valore avviene nel secret manager o con one-time secure exchange. Runtime risolve localmente tramite binding non portabile e workload identity autorizzata.
 
 Operazioni critiche: rotate, revoke, overlap, emergency disable. Tutte asincrone, idempotenti, dual-control quando il blast radius è multi-facility e con verifica post-rotazione.
 

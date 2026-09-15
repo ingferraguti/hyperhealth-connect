@@ -8,9 +8,9 @@ epics:
   - id: WP1-01
     priority: P0
     owner: platform-engineering
-    requirements: [FR-TEN-001, FR-TEN-002, FR-TEN-003, NFR-SEC-001, NFR-SCL-001]
+    requirements: [FR-TEN-001, FR-TEN-002, FR-TEN-003, NFR-SEC-001, NFR-SEC-003, NFR-SCL-001]
     useCases: [UC-CLIN-001, UC-SEC-01]
-    acceptanceTests: [tenant-isolation-matrix, migration-fresh-and-n-minus-one, oidc-negative-matrix]
+    acceptanceTests: [tenant-isolation-matrix, migration-fresh-and-n-minus-one, oidc-negative-matrix, secret-reference-schema-export-and-overlap]
     evidence: evidence/R0.2/G2
   - id: WP1-02
     priority: P0

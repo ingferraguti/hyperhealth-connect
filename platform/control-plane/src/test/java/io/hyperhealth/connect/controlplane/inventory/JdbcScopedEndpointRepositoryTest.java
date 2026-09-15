@@ -1,6 +1,7 @@
 package io.hyperhealth.connect.controlplane.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,6 +31,12 @@ import io.hyperhealth.connect.controlplane.inventory.InventoryId.TenantId;
 import io.hyperhealth.connect.controlplane.inventory.api.InventoryProblemAdvice;
 import io.hyperhealth.connect.controlplane.inventory.api.ScopedEndpointController;
 import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
+import io.hyperhealth.connect.controlplane.secret.JdbcSecretReferenceRepository;
+import io.hyperhealth.connect.controlplane.secret.SecretProvider;
+import io.hyperhealth.connect.controlplane.secret.SecretPurpose;
+import io.hyperhealth.connect.controlplane.secret.SecretReference;
+import io.hyperhealth.connect.controlplane.secret.SecretReferenceId;
+import io.hyperhealth.connect.controlplane.secret.SecretReferenceUnavailableException;
 
 @Testcontainers
 class JdbcScopedEndpointRepositoryTest {
@@ -45,6 +52,7 @@ class JdbcScopedEndpointRepositoryTest {
             .withPassword("synthetic-test-password");
 
     private JdbcScopedEndpointRepository repository;
+    private JdbcSecretReferenceRepository secretRepository;
 
     @BeforeEach
     void prepareDatabase() throws SQLException {
@@ -67,6 +75,7 @@ class JdbcScopedEndpointRepositoryTest {
         dataSource.setUser(POSTGRES.getUsername());
         dataSource.setPassword(POSTGRES.getPassword());
         repository = new JdbcScopedEndpointRepository(dataSource);
+        secretRepository = new JdbcSecretReferenceRepository(dataSource);
     }
 
     @Test
@@ -131,6 +140,163 @@ class JdbcScopedEndpointRepositoryTest {
                 .andExpect(jsonPath("$.code").value("HHC-INV-404-001"))
                 .andExpect(content().string(org.hamcrest.Matchers.not(
                         org.hamcrest.Matchers.containsString("HHC-SYNTHETIC Sibling Facility Endpoint"))));
+    }
+
+    @Test
+    void persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata() throws Exception {
+        InventoryFixture authorized = createEndpointFixture("Secret Authorized");
+        InventoryFixture sibling = createEndpointFixture(authorized.tenantId(), "Secret Sibling");
+        InventoryFixture otherTenant = createEndpointFixture("Secret Other Tenant");
+        UUID backendBindingId = UUID.randomUUID();
+        SecretReference reference = SecretReference.active(
+                SecretReferenceId.newId(),
+                authorized.tenantId(),
+                authorized.facilityId(),
+                SecretProvider.AZURE_KEY_VAULT,
+                backendBindingId,
+                SecretPurpose.OAUTH_CLIENT_CREDENTIAL);
+
+        secretRepository.register(authorized.scope(), reference);
+        secretRepository.bindToEndpoint(authorized.scope(), authorized.endpointId(), reference.id());
+
+        SecretReference conflictingReference = SecretReference.active(
+                SecretReferenceId.newId(),
+                authorized.tenantId(),
+                authorized.facilityId(),
+                SecretProvider.AZURE_KEY_VAULT,
+                backendBindingId,
+                SecretPurpose.OAUTH_CLIENT_CREDENTIAL);
+        assertThatThrownBy(() -> secretRepository.register(authorized.scope(), conflictingReference))
+                .isInstanceOf(SecretReferenceUnavailableException.class)
+                .hasMessageNotContaining(backendBindingId.toString())
+                .hasMessageNotContaining(conflictingReference.id().externalForm())
+                .hasNoCause();
+
+        assertThat(secretRepository.findUsable(authorized.scope(), reference.id())).isPresent();
+        assertThat(secretRepository.findUsable(sibling.scope(), reference.id())).isEmpty();
+        assertThat(secretRepository.findUsable(otherTenant.scope(), reference.id())).isEmpty();
+        assertThat(secretRepository.exportEndpointReferences(authorized.scope(), authorized.endpointId()))
+                .singleElement()
+                .satisfies(export -> {
+                    assertThat(export.secretReferenceId()).isEqualTo(reference.id().externalForm());
+                    assertThat(export.provider()).isEqualTo(SecretProvider.AZURE_KEY_VAULT);
+                    assertThat(export.purpose()).isEqualTo(SecretPurpose.OAUTH_CLIENT_CREDENTIAL);
+                    assertThat(export.requiresRebinding()).isTrue();
+                    assertThat(export.toString()).doesNotContain(backendBindingId.toString());
+                });
+
+        assertThat(secretRepository.exportEndpointReferences(sibling.scope(), authorized.endpointId()))
+                .isEmpty();
+        assertThatThrownBy(() ->
+                        secretRepository.bindToEndpoint(authorized.scope(), sibling.endpointId(), reference.id()))
+                .isInstanceOf(SecretReferenceUnavailableException.class)
+                .hasMessageNotContaining(reference.id().externalForm())
+                .hasMessageNotContaining(sibling.endpointId().externalForm());
+    }
+
+    @Test
+    void permitsRotationOverlapAndExcludesRevokedReferencesFromRuntimeExports() throws Exception {
+        InventoryFixture fixture = createEndpointFixture("Secret Rotation");
+        SecretReference oldReference = SecretReference.active(
+                SecretReferenceId.newId(),
+                fixture.tenantId(),
+                fixture.facilityId(),
+                SecretProvider.HASHICORP_VAULT,
+                UUID.randomUUID(),
+                SecretPurpose.TLS_CLIENT_CERTIFICATE);
+        SecretReference replacementReference = SecretReference.active(
+                SecretReferenceId.newId(),
+                fixture.tenantId(),
+                fixture.facilityId(),
+                SecretProvider.HASHICORP_VAULT,
+                UUID.randomUUID(),
+                SecretPurpose.TLS_CLIENT_CERTIFICATE);
+
+        secretRepository.register(fixture.scope(), oldReference);
+        secretRepository.register(fixture.scope(), replacementReference);
+        secretRepository.bindToEndpoint(fixture.scope(), fixture.endpointId(), oldReference.id());
+        secretRepository.bindToEndpoint(fixture.scope(), fixture.endpointId(), replacementReference.id());
+
+        assertThat(secretRepository.exportEndpointReferences(fixture.scope(), fixture.endpointId()))
+                .extracting(export -> export.secretReferenceId())
+                .containsExactlyInAnyOrder(oldReference.id().externalForm(), replacementReference.id().externalForm());
+
+        execute("""
+                UPDATE platform_core.secret_reference
+                   SET reference_state = 'REVOKED',
+                       revoked_at = transaction_timestamp(),
+                       updated_at = transaction_timestamp(),
+                       row_version = row_version + 1
+                 WHERE tenant_id = ?
+                   AND facility_id = ?
+                   AND secret_reference_id = ?
+                """, fixture.tenantId().value(), fixture.facilityId().value(), oldReference.id().value());
+
+        assertThat(secretRepository.findUsable(fixture.scope(), oldReference.id())).isEmpty();
+        assertThat(secretRepository.exportEndpointReferences(fixture.scope(), fixture.endpointId()))
+                .singleElement()
+                .extracting(export -> export.secretReferenceId())
+                .isEqualTo(replacementReference.id().externalForm());
+        execute("""
+                UPDATE platform_core.endpoint_secret_binding
+                   SET retired_at = transaction_timestamp()
+                 WHERE tenant_id = ?
+                   AND facility_id = ?
+                   AND endpoint_id = ?
+                   AND secret_reference_id = ?
+                   AND retired_at IS NULL
+                """,
+                fixture.tenantId().value(),
+                fixture.facilityId().value(),
+                fixture.endpointId().value(),
+                oldReference.id().value());
+        assertThatThrownBy(() -> execute("""
+                        UPDATE platform_core.secret_reference
+                           SET reference_state = 'ACTIVE',
+                               revoked_at = NULL,
+                               updated_at = transaction_timestamp(),
+                               row_version = row_version + 1
+                         WHERE secret_reference_id = ?
+                        """, oldReference.id().value()))
+                .isInstanceOf(SQLException.class)
+                .extracting(exception -> ((SQLException) exception).getSQLState())
+                .isEqualTo("23514");
+        assertThatThrownBy(() -> execute("""
+                        UPDATE platform_core.endpoint_secret_binding
+                           SET retired_at = NULL
+                         WHERE secret_reference_id = ?
+                        """, oldReference.id().value()))
+                .isInstanceOf(SQLException.class)
+                .extracting(exception -> ((SQLException) exception).getSQLState())
+                .isEqualTo("23514");
+    }
+
+    @Test
+    void excludesSecretReferencesAfterTheBoundEndpointIsDecommissioned() throws Exception {
+        InventoryFixture fixture = createEndpointFixture("Secret Decommissioned");
+        SecretReference reference = SecretReference.active(
+                SecretReferenceId.newId(),
+                fixture.tenantId(),
+                fixture.facilityId(),
+                SecretProvider.AWS_SECRETS_MANAGER,
+                UUID.randomUUID(),
+                SecretPurpose.ENDPOINT_API_TOKEN);
+        secretRepository.register(fixture.scope(), reference);
+        secretRepository.bindToEndpoint(fixture.scope(), fixture.endpointId(), reference.id());
+
+        execute("""
+                UPDATE platform_core.endpoint
+                   SET lifecycle_state = 'DECOMMISSIONED',
+                       decommissioned_at = transaction_timestamp(),
+                       updated_at = transaction_timestamp(),
+                       row_version = row_version + 1
+                 WHERE tenant_id = ?
+                   AND facility_id = ?
+                   AND endpoint_id = ?
+                """, fixture.tenantId().value(), fixture.facilityId().value(), fixture.endpointId().value());
+
+        assertThat(secretRepository.exportEndpointReferences(fixture.scope(), fixture.endpointId()))
+                .isEmpty();
     }
 
     private static InventoryFixture createEndpointFixture(String label) throws SQLException {
