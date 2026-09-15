@@ -21,6 +21,7 @@ $required = @(
     "$migrationDirectory/V002__migrate__validate_inventory_constraints.sql",
     "$migrationDirectory/V003__expand__inventory_query_indexes.sql",
     "$migrationDirectory/V003__expand__inventory_query_indexes.sql.conf",
+    "$migrationDirectory/V004__expand__scoped_secret_references.sql",
     $manifestPath,
     'docs/roadmap/phase-1-p1-0102-implementation.md',
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java'
@@ -31,7 +32,7 @@ Add-Check 'p1-0102-artifacts' ($missing.Count -eq 0) $(if ($missing) { "missing:
 $sqlFiles = @(Get-ChildItem -LiteralPath $migrationDirectory -File -Filter '*.sql' | Sort-Object Name)
 $badNames = @($sqlFiles | Where-Object { $_.Name -notmatch '^V[0-9]{3}__(expand|migrate|contract)__[a-z0-9_]+\.sql$' })
 $versions = @($sqlFiles | ForEach-Object { [regex]::Match($_.Name, '^V([0-9]{3})__').Groups[1].Value })
-Add-Check 'migration-naming' ($badNames.Count -eq 0 -and ($versions -join ',') -eq '001,002,003') 'forward migrations are ordered and phase-labelled V001 through V003'
+Add-Check 'migration-naming' ($badNames.Count -eq 0 -and ($versions -join ',') -eq '001,002,003,004') 'forward migrations are ordered and phase-labelled V001 through V004'
 
 $destructive = @($sqlFiles | Where-Object { (Get-Content -LiteralPath $_.FullName -Raw) -match '(?im)^\s*(DROP|TRUNCATE)\s' })
 Add-Check 'greenfield-nondestructive' ($destructive.Count -eq 0) $(if ($destructive) { "destructive DDL in: $($destructive.Name -join ', ')" } else { 'baseline contains no DROP or TRUNCATE operation' })

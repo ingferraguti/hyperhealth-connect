@@ -152,13 +152,13 @@ Tutti i fixture sono marcati `HHC-SYNTHETIC`. Il test PostgreSQL usa la stessa i
 Non sono inclusi:
 
 - autenticazione OIDC, RBAC minimo e workload identity, successivamente introdotti da P1-0104; l'ABAC completo resta nei work item di policy/authorization successivi;
-- secret reference e rotazione, previsti da P1-0105;
+- secret reference scoped, schema senza valore/locator ed export con rebinding obbligatorio, successivamente introdotti da P1-0105; resolver provider e rotazione end-to-end restano nei work item runtime/deployment;
 - create/update/decommission, collection, pagination, ETag e idempotenza, previsti da P1-0106;
 - audit journal, previsto da P1-0107;
 - matrice negativa per ogni risorsa/layer e RLS defense-in-depth, prevista da P1-0108;
 - seed e benchmark su scala, previsti da P1-0110.
 
-P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato, ma G2 rimane aperto fino al completamento di P1-0105…P1-0110 e della qualification prevista.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference. G2 rimane aperto fino al completamento di P1-0106…P1-0110 e della qualification prevista.
 
 ## Fonti ufficiali
 

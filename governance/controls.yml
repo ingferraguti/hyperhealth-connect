@@ -1,5 +1,5 @@
 schemaVersion: 1
-reviewedAt: 2026-09-07
+reviewedAt: 2026-09-15
 controls:
   - id: CTRL-TENANT-001
     objective: deny cross-tenant and cross-facility access by construction
@@ -21,6 +21,11 @@ controls:
     owner: product-security
     automation: gitleaks
     frequency: every-change-and-weekly-full-history
+  - id: CTRL-SECRET-REF-001
+    objective: exclude secret material and provider locators from platform persistence and portable exports
+    owner: product-security
+    automation: postgresql-schema-contract-and-serialization-tests
+    frequency: every-change
   - id: CTRL-SBOM-001
     objective: emit a CycloneDX 1.6 SBOM for every release candidate
     owner: release-engineering
@@ -61,4 +66,3 @@ controls:
     owner: integration-runtime
     automation: contract-test
     frequency: every-change
-

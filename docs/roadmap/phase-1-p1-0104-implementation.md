@@ -24,7 +24,7 @@ P1-0104 introduce il trust boundary che mancava al percorso scoped realizzato da
 8. risponde con Problem Details uniforme e privo di token, claim, chiavi, SQL o dati di risorse negate;
 9. resta deny-by-default se OIDC non è abilitato o se la configurazione di trust è incompleta.
 
-L'incremento non rende concluso WP1-01 né Gate G2. Secret reference, API inventory completa, audit journal e matrice negativa estesa a ogni risorsa restano rispettivamente P1-0105, P1-0106, P1-0107 e P1-0108.
+L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md); API inventory completa, audit journal e matrice negativa estesa a ogni risorsa restano rispettivamente P1-0106, P1-0107 e P1-0108.
 
 ## 2. Trust boundary e flusso della richiesta
 
@@ -108,7 +108,7 @@ La relazione fra tenant e facility viene verificata nuovamente dal lookup scoped
 
 Le allowlist client dei due profili devono essere disgiunte e le audience devono essere differenti; l'applicazione non parte con OIDC abilitato se l'invariante è violato. Un ruolo workload in un token umano, o viceversa, rende invalido l'intero token. Nessuna service identity eredita privilegi dall'utente che ha creato o distribuito il workload.
 
-In qualification e produzione il workload client deve inoltre usare credenziali asimmetriche o mTLS/sender-constrained token secondo il profilo di rischio. P1-0104 implementa la verifica lato Resource Server e la separazione logica; provisioning delle credenziali, secret reference e rotazione automatica entrano nei work item successivi e non sono dichiarati come già consegnati.
+In qualification e produzione il workload client deve inoltre usare credenziali asimmetriche o mTLS/sender-constrained token secondo il profilo di rischio. P1-0104 implementa la verifica lato Resource Server e la separazione logica. P1-0105 ha successivamente aggiunto reference e binding opachi senza valori; provisioning nel provider, resolver runtime e rotazione automatica end-to-end restano nei work item successivi e non sono dichiarati come già consegnati.
 
 ## 5. Ruoli e capability minime
 
@@ -241,7 +241,7 @@ Test:
 
 | Tema | Stato dopo P1-0104 | Owner/work item |
 |---|---|---|
-| secret/private key workload | nessun valore nel codice; provisioning non implementato | P1-0105 |
+| secret/private key workload | reference scoped/binding opaco consegnati da P1-0105; valore e provisioning provider restano esterni | runtime/deployment qualification |
 | inventory CRUD e grant persistenti | fuori dal vertical slice | P1-0106 |
 | audit append-only di allow/deny | non ancora consegnato; correlation disponibile | P1-0107 |
 | matrix completa ogni endpoint/layer | subset OIDC critico consegnato | P1-0108 / G2 |

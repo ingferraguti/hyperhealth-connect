@@ -17,6 +17,8 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
+import io.hyperhealth.connect.controlplane.secret.JdbcSecretReferenceRepository;
+import io.hyperhealth.connect.controlplane.secret.SecretReferenceRepository;
 
 /** Fail-closed wiring for the scoped inventory slice and its bounded connection pool. */
 @Configuration(proxyBeanMethods = false)
@@ -53,6 +55,11 @@ public class ScopedInventoryConfiguration implements WebMvcConfigurer {
     @Bean
     ScopedEndpointRepository scopedEndpointRepository(DataSource platformDataSource) {
         return new JdbcScopedEndpointRepository(platformDataSource);
+    }
+
+    @Bean
+    SecretReferenceRepository secretReferenceRepository(DataSource platformDataSource) {
+        return new JdbcSecretReferenceRepository(platformDataSource);
     }
 
     @Bean
