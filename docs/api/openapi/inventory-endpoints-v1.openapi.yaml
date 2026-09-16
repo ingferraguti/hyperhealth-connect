@@ -1,10 +1,11 @@
 openapi: 3.2.0
 info:
   title: HyperHealth Connect Inventory Endpoint API
-  version: 0.2.0
+  version: 0.3.0
   description: >-
-    Facility-scoped Endpoint vertical slice delivered by P1-0106. Requests and
-    examples are synthetic and must never contain PHI or secret material.
+    Facility-scoped Endpoint vertical slice delivered by P1-0106 and audited by
+    P1-0107. Requests and examples are synthetic and must never contain PHI or
+    secret material.
 servers:
   - url: https://control-plane.example.invalid
 security:
@@ -15,6 +16,7 @@ paths:
       operationId: listEndpoints
       summary: List current endpoints in the verified facility scope
       parameters:
+        - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/ApplicationFilter'
         - $ref: '#/components/parameters/LifecycleFilter'
         - $ref: '#/components/parameters/Cursor'
@@ -25,6 +27,8 @@ paths:
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
           content:
             application/json:
               schema:
@@ -41,6 +45,7 @@ paths:
       operationId: createEndpoint
       summary: Create one endpoint atomically
       parameters:
+        - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -54,6 +59,8 @@ paths:
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
             ETag:
               $ref: '#/components/headers/EndpointEtag'
             Location:
@@ -89,6 +96,7 @@ paths:
   /api/v1/endpoints/{endpointId}:
     parameters:
       - $ref: '#/components/parameters/EndpointId'
+      - $ref: '#/components/parameters/Traceparent'
     get:
       operationId: getEndpoint
       summary: Read a current endpoint in the verified facility scope
@@ -98,6 +106,8 @@ paths:
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
             ETag:
               $ref: '#/components/headers/EndpointEtag'
           content:
@@ -131,6 +141,8 @@ paths:
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
             ETag:
               $ref: '#/components/headers/EndpointEtag'
           content:
@@ -224,6 +236,16 @@ components:
         type: string
         pattern: '^"rv-(0|[1-9][0-9]*)"$'
       description: Exactly one strong Endpoint ETag; wildcard, weak tags and lists are rejected.
+    Traceparent:
+      name: traceparent
+      in: header
+      required: false
+      schema:
+        type: string
+        pattern: '^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$'
+      description: >-
+        Canonical W3C Trace Context version 00. Malformed or zero trace identifiers
+        are not propagated; the service generates a fresh trace identifier.
   headers:
     CacheControl:
       description: Scoped metadata is never stored by shared or browser caches.
@@ -235,6 +257,11 @@ components:
       schema:
         type: string
         pattern: '^"rv-(0|[1-9][0-9]*)"$'
+    CorrelationId:
+      description: Per-request UUID used to correlate the response and inventory audit event.
+      schema:
+        type: string
+        format: uuid
   responses:
     BadRequest:
       description: Invalid identifier, query, cursor, header or body.

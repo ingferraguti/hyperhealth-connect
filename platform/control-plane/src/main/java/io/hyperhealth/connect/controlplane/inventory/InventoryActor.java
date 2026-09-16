@@ -2,11 +2,14 @@ package io.hyperhealth.connect.controlplane.inventory;
 
 import java.util.Objects;
 
-/** Minimal authenticated actor context required by the idempotency boundary. */
-public record InventoryActor(String subject, String authorizedParty) {
+import io.hyperhealth.connect.controlplane.audit.InventoryActorType;
+
+/** Minimal authenticated actor context required by idempotency and audit boundaries. */
+public record InventoryActor(String subject, String authorizedParty, InventoryActorType actorType) {
     public InventoryActor {
         subject = requireBounded(subject, "subject", 512);
         authorizedParty = requireBounded(authorizedParty, "authorizedParty", 256);
+        Objects.requireNonNull(actorType, "actorType");
     }
 
     private static String requireBounded(String value, String name, int maximumLength) {

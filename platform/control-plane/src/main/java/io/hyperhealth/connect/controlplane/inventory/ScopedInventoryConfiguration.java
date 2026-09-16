@@ -2,6 +2,7 @@ package io.hyperhealth.connect.controlplane.inventory;
 
 import java.time.Duration;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,8 +18,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditJournal;
+import io.hyperhealth.connect.controlplane.audit.JdbcInventoryAuditJournal;
 import io.hyperhealth.connect.controlplane.inventory.api.InventoryCursorCodec;
+import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
 import io.hyperhealth.connect.controlplane.secret.JdbcSecretReferenceRepository;
 import io.hyperhealth.connect.controlplane.secret.SecretReferenceRepository;
 
@@ -27,7 +30,8 @@ import io.hyperhealth.connect.controlplane.secret.SecretReferenceRepository;
 @ConditionalOnProperty(prefix = "hhc.inventory", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties({
     ScopedInventoryConfiguration.PlatformDatabaseProperties.class,
-    ScopedInventoryConfiguration.InventoryApiProperties.class
+    ScopedInventoryConfiguration.InventoryApiProperties.class,
+    ScopedInventoryConfiguration.InventoryAuditProperties.class
 })
 public class ScopedInventoryConfiguration implements WebMvcConfigurer {
 
@@ -58,8 +62,23 @@ public class ScopedInventoryConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    ScopedEndpointRepository scopedEndpointRepository(DataSource platformDataSource) {
-        return new JdbcScopedEndpointRepository(platformDataSource);
+    InventoryAuditJournal inventoryAuditJournal(
+            DataSource platformDataSource, InventoryAuditProperties properties) {
+        properties.validate();
+        return new JdbcInventoryAuditJournal(
+                platformDataSource,
+                java.time.Clock.systemUTC(),
+                properties.decodedIntegrityKey(),
+                properties.decodedPseudonymizationKey(),
+                properties.integrityKeyId(),
+                properties.decodedPolicyDigest(),
+                properties.decodedArtifactDigest());
+    }
+
+    @Bean
+    ScopedEndpointRepository scopedEndpointRepository(
+            DataSource platformDataSource, InventoryAuditJournal auditJournal) {
+        return new JdbcScopedEndpointRepository(platformDataSource, auditJournal);
     }
 
     @Bean
@@ -190,6 +209,66 @@ public class ScopedInventoryConfiguration implements WebMvcConfigurer {
             if (value.compareTo(minimum) < 0 || value.compareTo(maximum) > 0) {
                 throw new IllegalStateException(name + " is outside the allowed range");
             }
+        }
+    }
+
+    @ConfigurationProperties("hhc.inventory-audit")
+    public record InventoryAuditProperties(
+            String integrityKey,
+            String pseudonymizationKey,
+            String integrityKeyId,
+            String policyDigest,
+            String artifactDigest) {
+
+        void validate() {
+            byte[] integrity = decodedIntegrityKey();
+            byte[] pseudonymization = decodedPseudonymizationKey();
+            if (java.util.Arrays.equals(integrity, pseudonymization)) {
+                throw new IllegalStateException("Audit integrity and pseudonymization keys must be distinct");
+            }
+            if (integrityKeyId == null || !integrityKeyId.matches("[A-Za-z0-9._:-]{1,128}")) {
+                throw new IllegalStateException("integrityKeyId is not canonical");
+            }
+            decodedPolicyDigest();
+            decodedArtifactDigest();
+        }
+
+        byte[] decodedIntegrityKey() {
+            return decodeKey(integrityKey, "integrityKey");
+        }
+
+        byte[] decodedPseudonymizationKey() {
+            return decodeKey(pseudonymizationKey, "pseudonymizationKey");
+        }
+
+        byte[] decodedPolicyDigest() {
+            return decodeDigest(policyDigest, "policyDigest");
+        }
+
+        byte[] decodedArtifactDigest() {
+            return decodeDigest(artifactDigest, "artifactDigest");
+        }
+
+        private static byte[] decodeKey(String value, String name) {
+            if (value == null || value.isBlank() || value.contains("=")) {
+                throw new IllegalStateException(name + " must be injected as unpadded base64url");
+            }
+            try {
+                byte[] decoded = Base64.getUrlDecoder().decode(value);
+                if (decoded.length < 32) {
+                    throw new IllegalStateException(name + " must contain at least 256 bits");
+                }
+                return decoded;
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalStateException(name + " must be unpadded base64url", exception);
+            }
+        }
+
+        private static byte[] decodeDigest(String value, String name) {
+            if (value == null || !value.matches("sha256:[0-9a-f]{64}")) {
+                throw new IllegalStateException(name + " must use canonical sha256:<lowercase-hex>");
+            }
+            return HexFormat.of().parseHex(value.substring("sha256:".length()));
         }
     }
 }

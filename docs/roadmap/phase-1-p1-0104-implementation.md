@@ -24,7 +24,7 @@ P1-0104 introduce il trust boundary che mancava al percorso scoped realizzato da
 8. risponde con Problem Details uniforme e privo di token, claim, chiavi, SQL o dati di risorse negate;
 9. resta deny-by-default se OIDC non è abilitato o se la configurazione di trust è incompleta.
 
-L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md) e la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md); audit journal e matrice negativa estesa restano P1-0107 e P1-0108.
+L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md), la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md) e il journal Endpoint da [P1-0107](phase-1-p1-0107-implementation.md); la matrice negativa estesa resta P1-0108.
 
 ## 2. Trust boundary e flusso della richiesta
 
@@ -243,12 +243,12 @@ Test:
 |---|---|---|
 | secret/private key workload | reference scoped/binding opaco consegnati da P1-0105; valore e provisioning provider restano esterni | runtime/deployment qualification |
 | inventory Endpoint CRUD e grant | successivamente consegnati | P1-0106 |
-| audit append-only di allow/deny | non ancora consegnato; correlation disponibile | P1-0107 |
+| audit append-only Endpoint | consegnato da P1-0107; deny pre-controller esclusi | P1-0108/WP1-10 |
 | matrix completa ogni endpoint/layer | subset OIDC critico consegnato | P1-0108 / G2 |
 | revoca near-real-time | dipende dal profilo IdP e TTL | Identity & Access / G2 |
 | sender constraint mTLS/DPoP | richiesto secondo rischio, non simulato | Security Architecture / qualification |
 | IdP/JWKS HA e DR | contratto e failure mode definiti, topologia da qualificare | SRE / G2, M5 |
-| audit indipendente | errori sicuri, ma journal rinviato | P1-0107, WP1-10 |
+| audit indipendente | journal transazionale Endpoint consegnato; sink separato rinviato | WP1-10 |
 
 Non sono stati introdotti SAML nel Resource Server, provisioning SCIM, login UI, sessioni browser, break-glass, policy engine generale, PHI access o amministrazione Keycloak. L'IdP di produzione può essere diverso da Keycloak purché emetta il contratto OIDC e superi gli stessi test.
 

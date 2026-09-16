@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditContext;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.ApplicationId;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.EndpointId;
 
@@ -39,28 +40,42 @@ public final class ScopedInventoryService {
         }
     }
 
-    public ScopedEndpoint getEndpoint(VerifiedFacilityScope scope, EndpointId endpointId) {
+    public ScopedEndpoint getEndpoint(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            EndpointId endpointId) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(endpointId, "endpointId");
         return endpointRepository
-                .findEndpoint(scope, endpointId)
+                .findEndpoint(scope, actor, auditContext, endpointId)
                 .orElseThrow(InventoryResourceNotFoundException::new);
     }
 
-    public EndpointPageSlice listEndpoints(VerifiedFacilityScope scope, EndpointQuery query) {
+    public EndpointPageSlice listEndpoints(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            EndpointQuery query) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(query, "query");
-        return endpointRepository.listEndpoints(scope, query);
+        return endpointRepository.listEndpoints(scope, actor, auditContext, query);
     }
 
     public EndpointCreationResult createEndpoint(
             VerifiedFacilityScope scope,
             InventoryActor actor,
+            InventoryAuditContext auditContext,
             UUID idempotencyKey,
             ApplicationId applicationId,
             String displayName) {
         Objects.requireNonNull(scope, "scope");
         Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(idempotencyKey, "idempotencyKey");
         Objects.requireNonNull(applicationId, "applicationId");
         String normalizedName = normalizeDisplayName(displayName);
@@ -69,15 +84,20 @@ public final class ScopedInventoryService {
                 digest("hhc:idempotency-key:v1", idempotencyKey),
                 requestDigest(applicationId, normalizedName),
                 Instant.now(clock).plus(idempotencyRetention));
-        return endpointRepository.createEndpoint(scope, actor, idempotency, applicationId, normalizedName);
+        return endpointRepository.createEndpoint(
+                scope, actor, auditContext, idempotency, applicationId, normalizedName);
     }
 
     public ScopedEndpoint updateEndpoint(
             VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
             EndpointId endpointId,
             long expectedRowVersion,
             EndpointPatch patch) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(endpointId, "endpointId");
         Objects.requireNonNull(patch, "patch");
         if (expectedRowVersion < 0) {
@@ -86,7 +106,8 @@ public final class ScopedInventoryService {
         EndpointPatch normalizedPatch = new EndpointPatch(
                 patch.displayName().map(ScopedInventoryService::normalizeDisplayName),
                 patch.lifecycleState());
-        return endpointRepository.updateEndpoint(scope, endpointId, expectedRowVersion, normalizedPatch);
+        return endpointRepository.updateEndpoint(
+                scope, actor, auditContext, endpointId, expectedRowVersion, normalizedPatch);
     }
 
     static String normalizeDisplayName(String value) {

@@ -4,7 +4,7 @@ databaseBaseline: PostgreSQL-18.6
 migrationEngine: Flyway-13.5.0
 generatedAt: 2026-09-16
 digestAlgorithm: SHA-256
-aggregateDigest: 7c3c96c7f8e3084d920fed0f0bfe479948e10063389df158a8ba02478c075e75
+aggregateDigest: 1d181004a5e626bce5e1379c0db03c499ad8c3ae08ce3e9fc4270403c31e32e8
 aggregateCanonicalization: files-sorted-by-name-each-line-filename-space-lowercase-sha256-lf-terminated
 migrations:
   - version: "001"
@@ -35,3 +35,7 @@ migrations:
     sha256: 0b2fe68ad1f9da98aa60e93e43a788da1643a81cd0ee90ef90f5dfb803ab6db0
     configurationFile: platform/control-plane/src/main/resources/db/migration/V006__expand__endpoint_api_indexes.sql.conf
     configurationSha256: bb1a39a7dec8a7851648456a6522eb7d11694e13c37ba4bed844d1d7dc0d3a6b
+  - version: "007"
+    phase: expand-inventory-audit-journal
+    file: platform/control-plane/src/main/resources/db/migration/V007__expand__inventory_audit_journal.sql
+    sha256: 6e9870bd61064eaea92f373235f23d43efa2c8b1764281ecf89571a0d52285e2

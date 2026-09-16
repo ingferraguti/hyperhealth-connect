@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import io.hyperhealth.connect.controlplane.audit.InventoryActorType;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditContext;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.EndpointId;
 
 class ScopedInventoryServiceTest {
@@ -28,7 +30,11 @@ class ScopedInventoryServiceTest {
         ScopedEndpointRepository repository = mock(ScopedEndpointRepository.class);
         ScopedInventoryService service = new ScopedInventoryService(repository);
 
-        assertThatThrownBy(() -> service.getEndpoint(null, new EndpointId(UUID.randomUUID())))
+        assertThatThrownBy(() -> service.getEndpoint(
+                        null,
+                        new InventoryActor("synthetic-subject", "synthetic-client", InventoryActorType.HUMAN),
+                        InventoryAuditContext.create(null),
+                        new EndpointId(UUID.randomUUID())))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("scope");
         verifyNoInteractions(repository);

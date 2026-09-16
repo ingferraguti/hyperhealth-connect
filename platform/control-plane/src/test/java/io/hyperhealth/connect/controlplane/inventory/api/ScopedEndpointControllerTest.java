@@ -99,11 +99,13 @@ class ScopedEndpointControllerTest {
                 "HHC-SYNTHETIC LIS inbound",
                 InventoryLifecycleState.ACTIVE,
                 7);
-        when(repository.findEndpoint(scope, endpointId)).thenReturn(Optional.of(endpoint));
+        when(repository.findEndpoint(eq(scope), any(), any(), eq(endpointId))).thenReturn(Optional.of(endpoint));
 
         mockMvc.perform(get("/api/v1/endpoints/{endpointId}", endpointId.externalForm())
+                        .principal(authentication)
                         .requestAttr(VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE, scope))
                 .andExpect(status().isOk())
+                .andExpect(header().exists("X-Correlation-ID"))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.endpointId").value(endpointId.externalForm()))
                 .andExpect(jsonPath("$.tenantId").value(tenantId.externalForm()))
@@ -112,13 +114,14 @@ class ScopedEndpointControllerTest {
                 .andExpect(jsonPath("$.rowVersion").value(7));
 
 
-        verify(repository).findEndpoint(scope, endpointId);
+        verify(repository).findEndpoint(eq(scope), any(), any(), eq(endpointId));
     }
 
     @Test
     void listsABoundedScopedPageWithoutADataCount() throws Exception {
         ScopedEndpoint endpoint = endpoint(3);
-        when(repository.listEndpoints(eq(scope), any())).thenReturn(new EndpointPageSlice(List.of(endpoint), false));
+        when(repository.listEndpoints(eq(scope), any(), any(), any()))
+                .thenReturn(new EndpointPageSlice(List.of(endpoint), false));
 
         mockMvc.perform(get("/api/v1/endpoints")
                         .principal(authentication)
@@ -134,7 +137,7 @@ class ScopedEndpointControllerTest {
     @Test
     void createsWithAReplayableIdempotencyContract() throws Exception {
         ScopedEndpoint endpoint = endpoint(0);
-        when(repository.createEndpoint(eq(scope), any(), any(), any(), eq("Synthetic endpoint")))
+        when(repository.createEndpoint(eq(scope), any(), any(), any(), any(), eq("Synthetic endpoint")))
                 .thenReturn(new EndpointCreationResult(endpoint, true));
 
         mockMvc.perform(post("/api/v1/endpoints")
@@ -177,7 +180,7 @@ class ScopedEndpointControllerTest {
 
     @Test
     void mapsAStaleEtagToPreconditionFailedWithoutLeakingState() throws Exception {
-        when(repository.updateEndpoint(eq(scope), eq(endpointId), eq(2L), any()))
+        when(repository.updateEndpoint(eq(scope), any(), any(), eq(endpointId), eq(2L), any()))
                 .thenThrow(new InventoryPreconditionFailedException());
 
         mockMvc.perform(patch("/api/v1/endpoints/{endpointId}", endpointId.externalForm())
@@ -217,9 +220,10 @@ class ScopedEndpointControllerTest {
 
     @Test
     void makesMissingAndCrossScopeResourcesIndistinguishable() throws Exception {
-        when(repository.findEndpoint(scope, endpointId)).thenReturn(Optional.empty());
+        when(repository.findEndpoint(eq(scope), any(), any(), eq(endpointId))).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/endpoints/{endpointId}", endpointId.externalForm())
+                        .principal(authentication)
                         .requestAttr(VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE, scope))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -233,6 +237,7 @@ class ScopedEndpointControllerTest {
     @Test
     void rejectsANonCanonicalEndpointIdentifierWithoutCallingPersistence() throws Exception {
         mockMvc.perform(get("/api/v1/endpoints/not-an-endpoint")
+                        .principal(authentication)
                         .requestAttr(VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE, scope))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("HHC-INV-400-001"));

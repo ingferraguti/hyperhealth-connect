@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.hyperhealth.connect.controlplane.audit.InventoryActorType;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditContext;
 import io.hyperhealth.connect.controlplane.inventory.EndpointCreationResult;
 import io.hyperhealth.connect.controlplane.inventory.EndpointPageSlice;
 import io.hyperhealth.connect.controlplane.inventory.EndpointPatch;
@@ -39,7 +41,7 @@ import io.hyperhealth.connect.controlplane.inventory.ScopedInventoryService;
 import io.hyperhealth.connect.controlplane.inventory.VerifiedFacilityScope;
 import io.hyperhealth.connect.controlplane.security.HhcJwtAuthenticationToken;
 
-/** Facility-scoped Endpoint API v0.2 with bounded keyset pagination and safe mutations. */
+/** Facility-scoped Endpoint API v0.3 with bounded mutations and transactional audit. */
 @RestController
 @ConditionalOnProperty(prefix = "hhc.inventory", name = "enabled", havingValue = "true")
 @RequestMapping(path = "/api/v1/endpoints", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -62,11 +64,13 @@ public final class ScopedEndpointController {
     public ResponseEntity<EndpointCollectionResponse> listEndpoints(
             VerifiedFacilityScope scope,
             HhcJwtAuthenticationToken authentication,
+            @RequestHeader(name = "traceparent", required = false) String traceparent,
             @RequestParam(name = "applicationId", required = false) String externalApplicationId,
             @RequestParam(name = "lifecycleState", required = false) String lifecycleState,
             @RequestParam(name = "cursor", required = false) String cursor,
             @RequestParam(name = "limit", defaultValue = "50") int limit) {
         InventoryActor actor = actor(authentication, scope);
+        InventoryAuditContext auditContext = InventoryAuditContext.create(traceparent);
         EndpointQuery baseQuery = new EndpointQuery(
                 optionalApplicationId(externalApplicationId),
                 optionalLifecycleState(lifecycleState),
@@ -75,7 +79,7 @@ public final class ScopedEndpointController {
         Optional<EndpointId> after = cursorCodec.decode(cursor, actor, scope, baseQuery);
         EndpointQuery repositoryQuery = new EndpointQuery(
                 baseQuery.applicationId(), baseQuery.lifecycleState(), after, baseQuery.limit());
-        EndpointPageSlice page = inventoryService.listEndpoints(scope, repositoryQuery);
+        EndpointPageSlice page = inventoryService.listEndpoints(scope, actor, auditContext, repositoryQuery);
         String nextCursor = page.hasMore()
                 ? cursorCodec.encode(
                         actor,
@@ -88,38 +92,49 @@ public final class ScopedEndpointController {
                 new PageResponse(nextCursor, limit, page.hasMore()));
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
+                .header("X-Correlation-ID", auditContext.correlationId().toString())
                 .body(response);
     }
 
     @GetMapping("/{endpointId}")
     public ResponseEntity<EndpointResponse> getEndpoint(
-            VerifiedFacilityScope scope, @PathVariable("endpointId") String externalEndpointId) {
-        ScopedEndpoint endpoint = inventoryService.getEndpoint(scope, endpointId(externalEndpointId));
-        return response(HttpStatus.OK, endpoint, false);
+            VerifiedFacilityScope scope,
+            HhcJwtAuthenticationToken authentication,
+            @RequestHeader(name = "traceparent", required = false) String traceparent,
+            @PathVariable("endpointId") String externalEndpointId) {
+        InventoryAuditContext auditContext = InventoryAuditContext.create(traceparent);
+        ScopedEndpoint endpoint = inventoryService.getEndpoint(
+                scope, actor(authentication, scope), auditContext, endpointId(externalEndpointId));
+        return response(HttpStatus.OK, endpoint, false, auditContext);
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EndpointResponse> createEndpoint(
             VerifiedFacilityScope scope,
             HhcJwtAuthenticationToken authentication,
+            @RequestHeader(name = "traceparent", required = false) String traceparent,
             @RequestHeader(name = "Idempotency-Key", required = false) String rawIdempotencyKey,
             @RequestBody CreateEndpointRequest request) {
         if (request == null) {
             throw new InvalidInventoryRequestException("A JSON request body is required");
         }
         InventoryActor actor = actor(authentication, scope);
+        InventoryAuditContext auditContext = InventoryAuditContext.create(traceparent);
         EndpointCreationResult result = inventoryService.createEndpoint(
                 scope,
                 actor,
+                auditContext,
                 idempotencyKey(rawIdempotencyKey),
                 applicationId(request.applicationId()),
                 request.displayName());
-        return response(HttpStatus.CREATED, result.endpoint(), result.replayed());
+        return response(HttpStatus.CREATED, result.endpoint(), result.replayed(), auditContext);
     }
 
     @PatchMapping(path = "/{endpointId}", consumes = MERGE_PATCH_MEDIA_TYPE)
     public ResponseEntity<EndpointResponse> patchEndpoint(
             VerifiedFacilityScope scope,
+            HhcJwtAuthenticationToken authentication,
+            @RequestHeader(name = "traceparent", required = false) String traceparent,
             @PathVariable("endpointId") String externalEndpointId,
             @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
             @RequestBody JsonNode request) {
@@ -140,18 +155,25 @@ public final class ScopedEndpointController {
         } catch (IllegalArgumentException exception) {
             throw new InvalidInventoryRequestException("At least one mutable property is required", exception);
         }
+        InventoryAuditContext auditContext = InventoryAuditContext.create(traceparent);
         ScopedEndpoint endpoint = inventoryService.updateEndpoint(
                 scope,
+                actor(authentication, scope),
+                auditContext,
                 endpointId(externalEndpointId),
                 EndpointEtag.parseRequired(ifMatch),
                 patch);
-        return response(HttpStatus.OK, endpoint, false);
+        return response(HttpStatus.OK, endpoint, false, auditContext);
     }
 
     private static ResponseEntity<EndpointResponse> response(
-            HttpStatus status, ScopedEndpoint endpoint, boolean replayed) {
+            HttpStatus status,
+            ScopedEndpoint endpoint,
+            boolean replayed,
+            InventoryAuditContext auditContext) {
         ResponseEntity.BodyBuilder builder = ResponseEntity.status(status)
                 .cacheControl(CacheControl.noStore())
+                .header("X-Correlation-ID", auditContext.correlationId().toString())
                 .eTag(EndpointEtag.from(endpoint.rowVersion()));
         if (status == HttpStatus.CREATED) {
             builder.location(URI.create("/api/v1/endpoints/" + endpoint.endpointId().externalForm()));
@@ -170,7 +192,9 @@ public final class ScopedEndpointController {
             throw new MissingVerifiedScopeException();
         }
         return new InventoryActor(
-                authentication.identity().subject(), authentication.identity().authorizedParty());
+                authentication.identity().subject(),
+                authentication.identity().authorizedParty(),
+                InventoryActorType.valueOf(authentication.identity().principalType().name()));
     }
 
     private static EndpointId endpointId(String value) {

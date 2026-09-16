@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import io.hyperhealth.connect.controlplane.audit.InventoryActorType;
 import io.hyperhealth.connect.controlplane.inventory.EndpointQuery;
 import io.hyperhealth.connect.controlplane.inventory.InventoryActor;
 import io.hyperhealth.connect.controlplane.inventory.InvalidInventoryRequestException;
@@ -25,7 +26,8 @@ class InventoryCursorCodecTest {
     private static final Instant NOW = Instant.parse("2026-09-16T12:00:00Z");
     private static final byte[] SIGNING_KEY = new byte[32];
 
-    private final InventoryActor actor = new InventoryActor("subject-1", "control-plane-ui");
+    private final InventoryActor actor =
+            new InventoryActor("subject-1", "control-plane-ui", InventoryActorType.HUMAN);
     private final VerifiedFacilityScope scope = new VerifiedFacilityScope(
             new TenantId(UUID.randomUUID()), new FacilityId(UUID.randomUUID()));
     private final EndpointQuery query = new EndpointQuery(
@@ -57,7 +59,7 @@ class InventoryCursorCodecTest {
                 .isInstanceOf(InvalidInventoryRequestException.class);
         assertThatThrownBy(() -> codec.decode(
                         encoded,
-                        new InventoryActor("another-subject", actor.authorizedParty()),
+                        new InventoryActor("another-subject", actor.authorizedParty(), InventoryActorType.HUMAN),
                         scope,
                         query))
                 .isInstanceOf(InvalidInventoryRequestException.class);
