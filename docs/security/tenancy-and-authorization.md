@@ -92,6 +92,12 @@ Il modello conserva solo ID logico, provider/purpose/stato chiusi e un binding l
 
 Il ruolo human `FacilityOperator` riceve `HHC_INVENTORY_READ` e `HHC_INVENTORY_WRITE`; `Auditor` e il workload `RuntimeAgent` restano read-only, mentre `FlowDeveloper` non riceve capability inventory in questo slice. List, create e PATCH mantengono `VerifiedFacilityScope` fino alle statement SQL. L'idempotency namespace è separato per Tenant, Facility, digest subject e client allowlisted; cursor e mutazioni non accettano scope dal client. I dettagli sono in [P1-0106](../roadmap/phase-1-p1-0106-implementation.md).
 
+### 6.4 Audit boundary Endpoint implementato in P1-0107
+
+Controller, service e repository propagano `InventoryActor` e `InventoryAuditContext` insieme allo scope verificato. Il tipo attore deriva dal profilo OIDC `HUMAN|WORKLOAD`, non da un header client. Subject e resource key sono HMAC-pseudonimizzati con chiave dedicata; nel journal resta in chiaro soltanto l'authorized party già allowlisted, necessario per attribuire il client applicativo.
+
+Il journal verifica nuovamente che la Facility appartenga al Tenant prima di creare il chain head o l'evento. Uno scope internamente incoerente fallisce chiuso e non può creare un record audit orfano. Le mutation privilegiate non possono essere committate senza evento; i deny del filtro OIDC/RBAC precedenti al controller sono responsabilità della matrice P1-0108 e del servizio audit WP1-10. I dettagli sono in [P1-0107](../roadmap/phase-1-p1-0107-implementation.md).
+
 ## 7. Isolamento per layer
 
 | Layer | Controllo |

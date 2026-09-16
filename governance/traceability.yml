@@ -114,8 +114,12 @@ items:
   - requirement: FR-AUD-001
     decisions: [ADR-008, ADR-016, ADR-025]
     controls: [CTRL-LOG-001, CTRL-TRACE-001, CTRL-TENANT-001]
-    tests: [planned/R0.2/M4/audit-chain-verification, planned/R0.2/M4/canary-phi-leakage, planned/R0.2/M4/telemetry-outage]
-    evidence: evidence/R0.2/M4
+    tests:
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/audit/InventoryAuditContextTest.java
+      - planned/R0.2/M4/canary-phi-leakage
+      - planned/R0.2/M4/telemetry-outage
+    evidence: docs/roadmap/phase-1-p1-0107-implementation.md
     owner: security-observability-engineering
   - requirement: NFR-BC-001
     decisions: [ADR-001, ADR-026, ADR-028]

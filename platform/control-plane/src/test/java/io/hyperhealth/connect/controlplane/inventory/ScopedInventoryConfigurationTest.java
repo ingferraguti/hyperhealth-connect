@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,36 @@ class ScopedInventoryConfigurationTest {
                         key, Duration.ofHours(2), Duration.ofHours(24)).validate())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("cursorTtl");
+    }
+
+    @Test
+    void requiresDistinctAuditKeysAndCanonicalSupplyChainDigests() {
+        String integrityKey = encodedKey(0x11);
+        String pseudonymizationKey = encodedKey(0x22);
+        String digest = "sha256:" + "a".repeat(64);
+        ScopedInventoryConfiguration.InventoryAuditProperties valid =
+                new ScopedInventoryConfiguration.InventoryAuditProperties(
+                        integrityKey, pseudonymizationKey, "audit-key-2026-01", digest, digest);
+
+        assertThatNoException().isThrownBy(valid::validate);
+        assertThatThrownBy(() -> new ScopedInventoryConfiguration.InventoryAuditProperties(
+                        integrityKey, integrityKey, "audit-key-2026-01", digest, digest).validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must be distinct");
+        assertThatThrownBy(() -> new ScopedInventoryConfiguration.InventoryAuditProperties(
+                        integrityKey, pseudonymizationKey, "invalid key id", digest, digest).validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("integrityKeyId");
+        assertThatThrownBy(() -> new ScopedInventoryConfiguration.InventoryAuditProperties(
+                        integrityKey, pseudonymizationKey, "audit-key-2026-01", "sha256:ABC", digest).validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("policyDigest");
+    }
+
+    private static String encodedKey(int value) {
+        byte[] bytes = new byte[32];
+        Arrays.fill(bytes, (byte) value);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private static ScopedInventoryConfiguration.PlatformDatabaseProperties properties(

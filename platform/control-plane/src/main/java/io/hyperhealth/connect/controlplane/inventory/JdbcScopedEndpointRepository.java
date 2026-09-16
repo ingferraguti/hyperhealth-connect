@@ -15,6 +15,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditAction;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditContext;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditIntent;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditJournal;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditOutcome;
+import io.hyperhealth.connect.controlplane.audit.InventoryAuditResourceType;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.ApplicationId;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.EndpointId;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.FacilityId;
@@ -97,18 +103,43 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
 
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transactionTemplate;
+    private final InventoryAuditJournal auditJournal;
 
-    public JdbcScopedEndpointRepository(DataSource dataSource) {
+    public JdbcScopedEndpointRepository(DataSource dataSource, InventoryAuditJournal auditJournal) {
         DataSource requiredDataSource = Objects.requireNonNull(dataSource, "dataSource");
         this.jdbcTemplate = new JdbcTemplate(requiredDataSource);
         this.jdbcTemplate.setQueryTimeout(5);
         this.transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(requiredDataSource));
+        this.auditJournal = Objects.requireNonNull(auditJournal, "auditJournal");
     }
 
     @Override
-    public Optional<ScopedEndpoint> findEndpoint(VerifiedFacilityScope scope, EndpointId endpointId) {
+    public Optional<ScopedEndpoint> findEndpoint(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            EndpointId endpointId) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(endpointId, "endpointId");
+        return Objects.requireNonNull(transactionTemplate.execute(status -> {
+            Optional<ScopedEndpoint> endpoint = findEndpointRow(scope, endpointId);
+            auditJournal.append(new InventoryAuditIntent(
+                    scope,
+                    auditContext,
+                    actor,
+                    InventoryAuditAction.ENDPOINT_READ,
+                    endpoint.isPresent() ? InventoryAuditOutcome.SUCCESS : InventoryAuditOutcome.FAILURE,
+                    endpoint.isPresent() ? null : "NOT_FOUND_OR_NOT_VISIBLE",
+                    InventoryAuditResourceType.ENDPOINT,
+                    endpointId.externalForm(),
+                    "current-view=true"));
+            return endpoint;
+        }));
+    }
+
+    private Optional<ScopedEndpoint> findEndpointRow(VerifiedFacilityScope scope, EndpointId endpointId) {
         return jdbcTemplate.query(
                 FIND_ENDPOINT,
                 statement -> {
@@ -120,9 +151,24 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
     }
 
     @Override
-    public EndpointPageSlice listEndpoints(VerifiedFacilityScope scope, EndpointQuery query) {
+    public EndpointPageSlice listEndpoints(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            EndpointQuery query) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(query, "query");
+        return Objects.requireNonNull(transactionTemplate.execute(status -> listEndpointsInTransaction(
+                scope, actor, auditContext, query)));
+    }
+
+    private EndpointPageSlice listEndpointsInTransaction(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            EndpointQuery query) {
         UUID applicationId = query.applicationId().map(ApplicationId::value).orElse(null);
         String lifecycleState = query.lifecycleState().map(Enum::name).orElse(null);
         UUID afterEndpointId = query.afterEndpointId().map(EndpointId::value).orElse(null);
@@ -141,18 +187,36 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
                 },
                 (resultSet, rowNumber) -> mapEndpoint(resultSet));
         boolean hasMore = rows.size() > query.limit();
-        return new EndpointPageSlice(hasMore ? rows.subList(0, query.limit()) : rows, hasMore);
+        EndpointPageSlice page = new EndpointPageSlice(
+                hasMore ? rows.subList(0, query.limit()) : rows, hasMore);
+        auditJournal.append(new InventoryAuditIntent(
+                scope,
+                auditContext,
+                actor,
+                InventoryAuditAction.ENDPOINT_LIST,
+                InventoryAuditOutcome.SUCCESS,
+                null,
+                InventoryAuditResourceType.ENDPOINT_COLLECTION,
+                "application=" + query.applicationId().map(ApplicationId::externalForm).orElse("all")
+                        + "|state=" + query.lifecycleState().map(Enum::name).orElse("all"),
+                "limit=" + query.limit()
+                        + "|after=" + query.afterEndpointId().isPresent()
+                        + "|returned=" + page.items().size()
+                        + "|hasMore=" + page.hasMore()));
+        return page;
     }
 
     @Override
     public EndpointCreationResult createEndpoint(
             VerifiedFacilityScope scope,
             InventoryActor actor,
+            InventoryAuditContext auditContext,
             EndpointIdempotency idempotency,
             ApplicationId applicationId,
             String displayName) {
         Objects.requireNonNull(scope, "scope");
         Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(idempotency, "idempotency");
         Objects.requireNonNull(applicationId, "applicationId");
         Objects.requireNonNull(displayName, "displayName");
@@ -166,7 +230,9 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
                     idempotency.requestDigest(),
                     idempotency.expiresAt().atOffset(java.time.ZoneOffset.UTC));
             if (claimed == 0) {
-                return replayCreation(scope, actor, idempotency);
+                EndpointCreationResult replay = replayCreation(scope, actor, idempotency);
+                appendCreationAudit(scope, actor, auditContext, replay.endpoint(), true);
+                return replay;
             }
             OrganizationId organizationId = findApplicationOrganization(scope, applicationId)
                     .orElseThrow(InventoryResourceNotFoundException::new);
@@ -191,6 +257,7 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
                         return mapEndpoint(resultSet);
                     });
             completeClaim(scope, actor, idempotency, endpoint);
+            appendCreationAudit(scope, actor, auditContext, endpoint, false);
             return new EndpointCreationResult(endpoint, false);
         }));
     }
@@ -198,10 +265,14 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
     @Override
     public ScopedEndpoint updateEndpoint(
             VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
             EndpointId endpointId,
             long expectedRowVersion,
             EndpointPatch patch) {
         Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(auditContext, "auditContext");
         Objects.requireNonNull(endpointId, "endpointId");
         Objects.requireNonNull(patch, "patch");
         return Objects.requireNonNull(transactionTemplate.execute(status -> {
@@ -231,9 +302,25 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
                                AND decommissioned_at IS NULL
                             """, endpointId.value());
                 }
+                InventoryAuditAction action = endpoint.lifecycleState() == InventoryLifecycleState.DECOMMISSIONED
+                        ? InventoryAuditAction.ENDPOINT_DECOMMISSION
+                        : InventoryAuditAction.ENDPOINT_UPDATE;
+                auditJournal.append(new InventoryAuditIntent(
+                        scope,
+                        auditContext,
+                        actor,
+                        action,
+                        InventoryAuditOutcome.SUCCESS,
+                        null,
+                        InventoryAuditResourceType.ENDPOINT,
+                        endpointId.externalForm(),
+                        "displayNameChanged=" + patch.displayName().isPresent()
+                                + "|lifecycleChanged=" + patch.lifecycleState().isPresent()
+                                + "|expectedVersion=" + expectedRowVersion
+                                + "|resultVersion=" + endpoint.rowVersion()));
                 return endpoint;
             }
-            Optional<ScopedEndpoint> current = findEndpoint(scope, endpointId);
+            Optional<ScopedEndpoint> current = findEndpointRow(scope, endpointId);
             if (current.isEmpty()) {
                 throw new InventoryResourceNotFoundException();
             }
@@ -328,6 +415,24 @@ public final class JdbcScopedEndpointRepository implements ScopedEndpointReposit
         if (updated != 1) {
             throw new IllegalStateException("Idempotency claim could not be completed");
         }
+    }
+
+    private void appendCreationAudit(
+            VerifiedFacilityScope scope,
+            InventoryActor actor,
+            InventoryAuditContext auditContext,
+            ScopedEndpoint endpoint,
+            boolean replayed) {
+        auditJournal.append(new InventoryAuditIntent(
+                scope,
+                auditContext,
+                actor,
+                InventoryAuditAction.ENDPOINT_CREATE,
+                InventoryAuditOutcome.SUCCESS,
+                replayed ? "IDEMPOTENT_REPLAY" : null,
+                InventoryAuditResourceType.ENDPOINT,
+                endpoint.endpointId().externalForm(),
+                "replayed=" + replayed + "|rowVersion=" + endpoint.rowVersion()));
     }
 
     private static ScopedEndpoint mapEndpoint(ResultSet resultSet) throws SQLException {

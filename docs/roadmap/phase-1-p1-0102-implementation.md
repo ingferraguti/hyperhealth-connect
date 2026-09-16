@@ -27,7 +27,7 @@ Le garanzie fondamentali non dipendono dalla sola correttezza del codice applica
 7. le assegnazioni di scope sono storicizzate e non sovrascritte;
 8. i principali access path scoped e operativi hanno indici dedicati e validati.
 
-Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, secret reference, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md), il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md), le secret reference scoped da [P1-0105](phase-1-p1-0105-implementation.md) e la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md). P1-0107 e P1-0108 restano responsabili di audit e matrice negativa estesa. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
+Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, secret reference, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md), il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md), le secret reference scoped da [P1-0105](phase-1-p1-0105-implementation.md), la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md) e il journal Endpoint da [P1-0107](phase-1-p1-0107-implementation.md). P1-0108 resta responsabile della matrice negativa estesa. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
 
 ## Artifact consegnati
 
@@ -105,7 +105,7 @@ Trigger `BEFORE` rifiutano:
 - hard delete di identità, risorse inventory e assegnazioni;
 - modifica in-place dell'identità di un'assegnazione.
 
-La cancellazione operativa usa la transizione a `DECOMMISSIONED`; la revoca di uno scope usa `revoked_at`. Questi eventi dovranno essere scritti anche nel journal audit tamper-evident da P1-0107. I trigger di P1-0102 garantiscono integrità, non costituiscono da soli un audit trail conforme.
+La cancellazione operativa usa la transizione a `DECOMMISSIONED`; la revoca di uno scope usa `revoked_at`. P1-0107 ha successivamente aggiunto il journal tamper-evident alle operazioni Endpoint. I trigger di P1-0102 garantiscono integrità, non costituiscono da soli un audit trail conforme.
 
 ## Piano degli indici
 
@@ -198,7 +198,7 @@ La presenza di `IF NOT EXISTS` sugli indici limita gli errori di retry, ma non s
 | scope shape/duplicate | shape incoerente, duplicato attivo e revoca dell'ultimo scope rifiutati |
 | secret reference P1-0105 | catalogo a colonne allowlisted, enum/UUID/ancestry validati, binding immutabile, hard delete rifiutato |
 
-Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0107–P1-0110 e le relative matrici non sono concluse.
+Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0108–P1-0110 e le relative matrici non sono concluse.
 
 ## Configurazione operativa minima
 
@@ -235,7 +235,7 @@ La compatibilità dichiarata di questo incremento è PostgreSQL 18.x. Distribuzi
 |---|---|---|
 | query applicativa dimentica lo scope | repository scoped consegnati da P1-0103/P1-0105 | matrice completa P1-0108 |
 | abuso di un ruolo DB privilegiato | constraint e trigger | separation of duties/grant nella deployment baseline |
-| modifica lifecycle non auditata | timestamp e stato persistiti | journal tamper-evident P1-0107 |
+| modifica lifecycle Endpoint | timestamp, stato ed evento tamper-evident | consegnata da P1-0107; altre risorse in WP1-10 |
 | accesso cross-scope autorizzato male | ancestry fisica coerente | OIDC/RBAC core P1-0104; matrice estesa P1-0108 |
 | indice corretto ma piano inefficiente su scala | struttura left-prefix | benchmark e `EXPLAIN (ANALYZE, BUFFERS)` sul corpus P1-0110/G2 |
 | errore durante migration non transazionale | catalog validation e forward-only | runbook operativo e qualification failure/resume M5 |

@@ -46,7 +46,7 @@ class PlatformCoreMigrationTest {
     void migratesAndValidatesAnEmptyPostgresql18Database() throws SQLException {
         Flyway flyway = flyway(null);
 
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(6);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(7);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
 
         assertThat(queryStrings("""
@@ -61,6 +61,8 @@ class PlatformCoreMigrationTest {
                         "facility",
                         "flyway_schema_history",
                         "inventory_idempotency_record",
+                        "inventory_audit_chain_head",
+                        "inventory_audit_event",
                         "lifecycle_state",
                         "organization",
                         "resource_identity",
@@ -100,6 +102,9 @@ class PlatformCoreMigrationTest {
                         "ix_endpoint_facility_page_active",
                         "ix_endpoint_facility_application_page_active",
                         "ix_inventory_idempotency_expiry",
+                        "ix_inventory_audit_scope_time",
+                        "ix_inventory_audit_resource_time",
+                        "ix_inventory_audit_actor_time",
                         "ix_runtime_cell_active_updated",
                         "ix_runtime_cell_scope_by_cell_history",
                         "ix_runtime_cell_scope_lookup_active",
@@ -116,7 +121,7 @@ class PlatformCoreMigrationTest {
         allocate(tenantId, "TENANT");
         execute("INSERT INTO platform_core.tenant (tenant_id, display_name) VALUES (?, ?)", tenantId, "Synthetic Tenant");
 
-        assertThat(flyway(null).migrate().migrationsExecuted).isEqualTo(5);
+        assertThat(flyway(null).migrate().migrationsExecuted).isEqualTo(6);
         assertThat(queryLong("SELECT count(*) FROM platform_core.tenant WHERE tenant_id = '" + tenantId + "'::uuid"))
                 .isEqualTo(1L);
         assertThat(flyway(null).validateWithResult().validationSuccessful).isTrue();

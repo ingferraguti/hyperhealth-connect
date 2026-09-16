@@ -26,7 +26,7 @@ Sono consegnati:
 
 Il contratto machine-readable è [inventory-endpoints-v1.openapi.yaml](../api/openapi/inventory-endpoints-v1.openapi.yaml); la documentazione narrativa resta autoritativa per failure, rollout e limiti non rappresentabili nello schema.
 
-Il completamento di P1-0106 non dichiara concluse le API amministrative di Tenant, Organization, Facility, Application o Runtime Cell. Queste richiedono scope di autorizzazione superiori a `VerifiedFacilityScope`, deleghe e policy non ancora modellate; pubblicarle ora con il token facility-scoped creerebbe un boundary incoerente. Non sono inoltre anticipate le attività P1-0107 (audit append-only), P1-0108 (matrice negativa completa), P1-0109 (qualification Unicode/locale/timezone) e P1-0110 (seed di scala).
+Il completamento di P1-0106 non dichiara concluse le API amministrative di Tenant, Organization, Facility, Application o Runtime Cell. Queste richiedono scope di autorizzazione superiori a `VerifiedFacilityScope`, deleghe e policy non ancora modellate; pubblicarle ora con il token facility-scoped creerebbe un boundary incoerente. P1-0107 ha successivamente consegnato l'audit append-only del vertical slice Endpoint; P1-0108 (matrice negativa completa), P1-0109 (qualification Unicode/locale/timezone) e P1-0110 (seed di scala) restano successivi.
 
 ## 2. Contratto HTTP
 
@@ -184,7 +184,7 @@ Un `FacilityOperator` legge ETag `rv-12` e sospende l'Endpoint MLLP durante manu
 
 ### INV-UC-03 — dismissione del sistema legacy
 
-Alla sostituzione di un LIS, l'Endpoint passa a `DECOMMISSIONED`. L'ID non viene riciclato, scompare dal current view e rimane referenziabile per history, binding e futuro audit P1-0107. Una richiesta di riattivazione restituisce 404 e richiede una nuova risorsa governata.
+Alla sostituzione di un LIS, l'Endpoint passa a `DECOMMISSIONED`. L'ID non viene riciclato, scompare dal current view e rimane referenziabile per history, binding e audit, successivamente consegnato da P1-0107. Una richiesta di riattivazione restituisce 404 e richiede una nuova risorsa governata.
 
 ### INV-UC-04 — inventario enterprise paginato
 
@@ -226,7 +226,8 @@ La chiave non deve essere passata come argomento CLI, committata, inserita in Co
 
 | Tema | Stato dopo P1-0106 | Chiusura |
 |---|---|---|
-| audit di create/update/decommission/deny | non ancora journalizzato | P1-0107 |
+| audit di create/read/list/update/decommission | consegnato da P1-0107 | [record P1-0107](phase-1-p1-0107-implementation.md) |
+| deny OIDC/RBAC e invalid request pre-controller | non ancora journalizzato | P1-0108/WP1-10 |
 | matrice negativa per tutte le risorse/layer | copertura Endpoint incrementale | P1-0108 |
 | Unicode/locale/timezone completa | input bounded, qualification non conclusa | P1-0109 |
 | seed e benchmark ≥10.000 Endpoint | non eseguito | P1-0110 e performance gate |
@@ -235,7 +236,7 @@ La chiave non deve essere passata come argomento CLI, committata, inserita in Co
 | API gerarchie superiori | non esposte con scope facility | authorization/admin API increment |
 | property authorization secret reference | nessun campo secret esposto | futura secret management API |
 
-WP1-01 e Gate G2 restano aperti fino a P1-0107…P1-0110 e relativa qualification.
+WP1-01 e Gate G2 restano aperti fino a P1-0108…P1-0110 e relativa qualification.
 
 ## 10. Fonti ufficiali e data di verifica
 

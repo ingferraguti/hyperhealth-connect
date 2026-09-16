@@ -38,6 +38,12 @@ hhc:
     cursor-signing-key: ${HHC_INVENTORY_CURSOR_SIGNING_KEY:}
     cursor-ttl: ${HHC_INVENTORY_CURSOR_TTL:15m}
     idempotency-retention: ${HHC_INVENTORY_IDEMPOTENCY_RETENTION:24h}
+  inventory-audit:
+    integrity-key: ${HHC_INVENTORY_AUDIT_INTEGRITY_KEY:}
+    pseudonymization-key: ${HHC_INVENTORY_AUDIT_PSEUDONYMIZATION_KEY:}
+    integrity-key-id: ${HHC_INVENTORY_AUDIT_KEY_ID:}
+    policy-digest: ${HHC_INVENTORY_AUDIT_POLICY_DIGEST:}
+    artifact-digest: ${HHC_CONTROL_PLANE_ARTIFACT_DIGEST:}
   platform-database:
     jdbc-url: ${HHC_PLATFORM_DB_JDBC_URL:}
     username: ${HHC_PLATFORM_DB_USERNAME:}
