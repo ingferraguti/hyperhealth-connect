@@ -3,7 +3,7 @@ package io.hyperhealth.connect.controlplane.security;
 import java.util.Arrays;
 import java.util.Optional;
 
-/** Closed, minimal role vocabulary for the P1-0104 inventory read slice. */
+/** Closed, minimal role vocabulary for the facility-scoped inventory slice. */
 public enum ControlPlaneRole {
     FACILITY_OPERATOR("FacilityOperator", PrincipalType.HUMAN),
     AUDITOR("Auditor", PrincipalType.HUMAN),

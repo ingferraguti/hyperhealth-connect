@@ -3,6 +3,7 @@ package io.hyperhealth.connect.controlplane.security;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +38,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -186,6 +188,36 @@ class OidcSecurityWebIntegrationTest {
                 .andExpect(jsonPath("$.code").value("HHC-AUTH-403-001"));
     }
 
+    @Test
+    void onlyFacilityOperatorReceivesTheInventoryWriteCapability() throws Exception {
+        String tenant = "t-" + UUID.randomUUID();
+        String facility = "f-" + UUID.randomUUID();
+        mockMvc.perform(post("/api/v1/endpoints")
+                        .header("Authorization", "Bearer " + token(
+                                TRUSTED_KEY,
+                                PrincipalType.HUMAN,
+                                "FacilityOperator",
+                                "hhc-control-plane-human",
+                                "hhc-control-plane-ui",
+                                tenant,
+                                facility,
+                                Instant.now().plusSeconds(300))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/endpoints")
+                        .header("Authorization", "Bearer " + token(
+                                TRUSTED_KEY,
+                                PrincipalType.HUMAN,
+                                "Auditor",
+                                "hhc-control-plane-human",
+                                "hhc-control-plane-ui",
+                                tenant,
+                                facility,
+                                Instant.now().plusSeconds(300))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("HHC-AUTH-403-001"));
+    }
+
     private void assertUnauthorized(String bearer) throws Exception {
         mockMvc.perform(get("/api/v1/endpoints/ep-synthetic")
                         .header("Authorization", "Bearer " + bearer))
@@ -265,6 +297,11 @@ class OidcSecurityWebIntegrationTest {
     @RestController
     @RequestMapping("/api/v1/endpoints")
     static class ScopeEchoController {
+
+        @PostMapping
+        Map<String, String> post() {
+            return Map.of("status", "accepted");
+        }
 
         @GetMapping("/{endpointId}")
         Map<String, String> get(

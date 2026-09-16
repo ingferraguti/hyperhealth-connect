@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 /** Authenticated bearer token retaining the validated HHC identity and facility scope. */
-final class HhcJwtAuthenticationToken extends JwtAuthenticationToken {
+public final class HhcJwtAuthenticationToken extends JwtAuthenticationToken {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -21,7 +21,7 @@ final class HhcJwtAuthenticationToken extends JwtAuthenticationToken {
         this.identity = java.util.Objects.requireNonNull(identity, "identity");
     }
 
-    AuthenticatedIdentity identity() {
+    public AuthenticatedIdentity identity() {
         return java.util.Objects.requireNonNull(identity, "identity is unavailable after serialization");
     }
 }

@@ -28,7 +28,7 @@ P1-0105 introduce una reference tipizzata e scoped verso credenziali conservate 
 
 La reference non equivale al secret e non permette di recuperarlo senza tre condizioni esterne: binding locale, workload identity autorizzata e policy del secret manager. Un dump del Platform DB o un export di configurazione non contiene né il valore né un locator direttamente utilizzabile contro il provider.
 
-P1-0105 non completa WP1-01 o Gate G2. L'API amministrativa completa, il journal audit e la matrice negativa estesa restano rispettivamente P1-0106, P1-0107 e P1-0108. Il resolver del Data Plane e gli adapter dei provider saranno qualificati nei work package connector/runtime e deployment.
+P1-0105 non completava WP1-01 o Gate G2. P1-0106 ha poi consegnato la API Endpoint senza esporre campi secret; il journal audit e la matrice negativa estesa restano P1-0107 e P1-0108. Il resolver del Data Plane e gli adapter dei provider saranno qualificati nei work package connector/runtime e deployment.
 
 ## 2. Confini di fiducia
 
@@ -197,7 +197,7 @@ La repository non ha metodi unscoped, lookup globale o fallback amministrativo. 
 
 Il DTO valida ID canonico, enum non null, versione non negativa e `requiresRebinding=true`. Non contiene ancestry, `backend_binding_id`, path, versione provider o materiale. Un import in un altro ambiente deve creare una nuova mappa locale dopo policy check: non può riutilizzare implicitamente il backend di origine.
 
-Questa projection è la fondazione per bundle e API successive; P1-0105 non espone ancora un endpoint HTTP di gestione. P1-0106 dovrà riusare questo tipo o un contratto equivalente e applicare property-level authorization, idempotenza ed ETag senza aggiungere locator o campi liberi.
+Questa projection è la fondazione per bundle e API successive; P1-0105 non espone un endpoint HTTP di gestione delle reference. P1-0106 ha riusato il vincolo di minimizzazione sulla API Endpoint e non ha aggiunto locator o campi liberi; la futura API delle reference dovrà applicare property-level authorization, idempotenza ed ETag allo stesso modo.
 
 ## 7. Rotazione, revoca e continuità
 
@@ -338,7 +338,7 @@ Governance:
 | Tema | Stato dopo P1-0105 | Chiusura |
 |---|---|---|
 | valore segreto in Platform DB/export | strutturalmente escluso | regressione continua |
-| API CRUD/ETag/idempotenza | non inclusa | P1-0106 |
+| API Endpoint CRUD/ETag/idempotenza | consegnata senza campi secret | P1-0106 |
 | audit tamper-evident | contratto definito, journal non incluso | P1-0107/WP1-10 |
 | matrice negativa completa | subset reference/Endpoint incluso | P1-0108/G2 |
 | adapter provider e resolver Data Plane | non incluso | WP1-04/WP1-11 |

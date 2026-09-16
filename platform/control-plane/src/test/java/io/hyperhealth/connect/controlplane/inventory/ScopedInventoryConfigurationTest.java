@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.Base64;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,24 @@ class ScopedInventoryConfigurationTest {
                         .validate())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("validationTimeout must be at least PT0.25S");
+    }
+
+    @Test
+    void requiresASharedHighEntropyCursorKeyAndBoundedRetention() {
+        String key = Base64.getUrlEncoder().withoutPadding().encodeToString(new byte[32]);
+        ScopedInventoryConfiguration.InventoryApiProperties valid =
+                new ScopedInventoryConfiguration.InventoryApiProperties(
+                        key, Duration.ofMinutes(15), Duration.ofHours(24));
+        assertThatNoException().isThrownBy(valid::validate);
+
+        assertThatThrownBy(() -> new ScopedInventoryConfiguration.InventoryApiProperties(
+                        "", Duration.ofMinutes(15), Duration.ofHours(24)).validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("cursorSigningKey");
+        assertThatThrownBy(() -> new ScopedInventoryConfiguration.InventoryApiProperties(
+                        key, Duration.ofHours(2), Duration.ofHours(24)).validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("cursorTtl");
     }
 
     private static ScopedInventoryConfiguration.PlatformDatabaseProperties properties(

@@ -1,0 +1,390 @@
+openapi: 3.2.0
+info:
+  title: HyperHealth Connect Inventory Endpoint API
+  version: 0.2.0
+  description: >-
+    Facility-scoped Endpoint vertical slice delivered by P1-0106. Requests and
+    examples are synthetic and must never contain PHI or secret material.
+servers:
+  - url: https://control-plane.example.invalid
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/endpoints:
+    get:
+      operationId: listEndpoints
+      summary: List current endpoints in the verified facility scope
+      parameters:
+        - $ref: '#/components/parameters/ApplicationFilter'
+        - $ref: '#/components/parameters/LifecycleFilter'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded keyset page
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointCollection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    post:
+      operationId: createEndpoint
+      summary: Create one endpoint atomically
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEndpoint'
+      responses:
+        '201':
+          description: Created or replayed creation outcome
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/EndpointEtag'
+            Location:
+              description: Canonical endpoint resource URI.
+              schema:
+                type: string
+                format: uri-reference
+            Idempotency-Replayed:
+              description: Present with value true only when a stored outcome was replayed.
+              schema:
+                type: string
+                const: 'true'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Endpoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Idempotency key collision.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/v1/endpoints/{endpointId}:
+    parameters:
+      - $ref: '#/components/parameters/EndpointId'
+    get:
+      operationId: getEndpoint
+      summary: Read a current endpoint in the verified facility scope
+      responses:
+        '200':
+          description: Current endpoint
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/EndpointEtag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Endpoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    patch:
+      operationId: patchEndpoint
+      summary: Rename or change lifecycle using optimistic concurrency
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/PatchEndpoint'
+      responses:
+        '200':
+          description: Updated endpoint, including a terminal decommission representation
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/EndpointEtag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Endpoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Lifecycle conflict.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '412':
+          description: The supplied ETag is stale.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '428':
+          description: If-Match is required.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC JWT validated under the distinct HHC human or workload profile.
+  parameters:
+    EndpointId:
+      name: endpointId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/EndpointId'
+    ApplicationFilter:
+      name: applicationId
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/ApplicationId'
+    LifecycleFilter:
+      name: lifecycleState
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ACTIVE, SUSPENDED]
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 512
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Canonical random UUIDv4; scoped and retained for the configured replay window.
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^"rv-(0|[1-9][0-9]*)"$'
+      description: Exactly one strong Endpoint ETag; wildcard, weak tags and lists are rejected.
+  headers:
+    CacheControl:
+      description: Scoped metadata is never stored by shared or browser caches.
+      schema:
+        type: string
+        const: no-store
+    EndpointEtag:
+      description: Strong logical-version ETag.
+      schema:
+        type: string
+        pattern: '^"rv-(0|[1-9][0-9]*)"$'
+  responses:
+    BadRequest:
+      description: Invalid identifier, query, cursor, header or body.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication or verified scope is absent.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The authenticated identity lacks the required capability.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource absent, decommissioned or not visible in the verified scope.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unavailable:
+      description: The operation could not be completed safely against persistence.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    TenantId:
+      type: string
+      pattern: '^t-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    OrganizationId:
+      type: string
+      pattern: '^o-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    FacilityId:
+      type: string
+      pattern: '^f-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    ApplicationId:
+      type: string
+      pattern: '^a-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    EndpointId:
+      type: string
+      pattern: '^ep-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    Endpoint:
+      type: object
+      additionalProperties: false
+      required:
+        - endpointId
+        - tenantId
+        - organizationId
+        - facilityId
+        - applicationId
+        - displayName
+        - lifecycleState
+        - rowVersion
+      properties:
+        endpointId:
+          $ref: '#/components/schemas/EndpointId'
+        tenantId:
+          $ref: '#/components/schemas/TenantId'
+        organizationId:
+          $ref: '#/components/schemas/OrganizationId'
+        facilityId:
+          $ref: '#/components/schemas/FacilityId'
+        applicationId:
+          $ref: '#/components/schemas/ApplicationId'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 256
+        lifecycleState:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DECOMMISSIONED]
+        rowVersion:
+          type: integer
+          format: int64
+          minimum: 0
+    CreateEndpoint:
+      type: object
+      additionalProperties: false
+      required: [applicationId, displayName]
+      properties:
+        applicationId:
+          $ref: '#/components/schemas/ApplicationId'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 256
+    PatchEndpoint:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 256
+        lifecycleState:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DECOMMISSIONED]
+    EndpointCollection:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Endpoint'
+        page:
+          type: object
+          additionalProperties: false
+          required: [nextCursor, limit, hasMore]
+          properties:
+            nextCursor:
+              type: [string, 'null']
+              maxLength: 512
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+            hasMore:
+              type: boolean
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, code, correlationId, retryable]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        retryable:
+          type: boolean

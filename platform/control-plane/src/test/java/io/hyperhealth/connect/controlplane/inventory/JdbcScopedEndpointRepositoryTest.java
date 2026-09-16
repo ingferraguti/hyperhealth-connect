@@ -12,6 +12,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.UUID;
 
 import org.flywaydb.core.Flyway;
@@ -26,9 +33,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.EndpointId;
+import io.hyperhealth.connect.controlplane.inventory.InventoryId.ApplicationId;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.FacilityId;
 import io.hyperhealth.connect.controlplane.inventory.InventoryId.TenantId;
 import io.hyperhealth.connect.controlplane.inventory.api.InventoryProblemAdvice;
+import io.hyperhealth.connect.controlplane.inventory.api.InventoryCursorCodec;
 import io.hyperhealth.connect.controlplane.inventory.api.ScopedEndpointController;
 import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
 import io.hyperhealth.connect.controlplane.secret.JdbcSecretReferenceRepository;
@@ -123,11 +132,154 @@ class JdbcScopedEndpointRepositoryTest {
     }
 
     @Test
+    void createsOnceAndReplaysTheExactResponseForTheSameIdempotencyKey() throws SQLException {
+        InventoryFixture fixture = createEndpointFixture("Idempotent creation");
+        ScopedInventoryService service = new ScopedInventoryService(repository);
+        InventoryActor actor = new InventoryActor("synthetic-operator", "hhc-control-plane-ui");
+        UUID key = UUID.randomUUID();
+
+        EndpointCreationResult first = service.createEndpoint(
+                fixture.scope(), actor, key, fixture.applicationId(), "HHC-SYNTHETIC new endpoint");
+        EndpointCreationResult replay = service.createEndpoint(
+                fixture.scope(), actor, key, fixture.applicationId(), "HHC-SYNTHETIC new endpoint");
+
+        assertThat(first.replayed()).isFalse();
+        assertThat(replay.replayed()).isTrue();
+        assertThat(replay.endpoint()).isEqualTo(first.endpoint());
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.inventory_idempotency_record WHERE tenant_id = ?",
+                        fixture.tenantId().value()))
+                .isEqualTo(1);
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.endpoint WHERE tenant_id = ?",
+                        fixture.tenantId().value()))
+                .isEqualTo(2);
+
+        assertThatThrownBy(() -> service.createEndpoint(
+                        fixture.scope(), actor, key, fixture.applicationId(), "A different request"))
+                .isInstanceOf(InventoryIdempotencyConflictException.class);
+    }
+
+    @Test
+    void concurrentRetriesCommitExactlyOneEndpoint() throws Exception {
+        InventoryFixture fixture = createEndpointFixture("Concurrent idempotency");
+        ScopedInventoryService service = new ScopedInventoryService(repository);
+        InventoryActor actor = new InventoryActor("synthetic-operator", "hhc-control-plane-ui");
+        UUID key = UUID.randomUUID();
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            java.util.concurrent.Callable<EndpointCreationResult> request = () -> {
+                start.await();
+                return service.createEndpoint(
+                        fixture.scope(), actor, key, fixture.applicationId(), "HHC-SYNTHETIC concurrent endpoint");
+            };
+            Future<EndpointCreationResult> firstFuture = executor.submit(request);
+            Future<EndpointCreationResult> secondFuture = executor.submit(request);
+            start.countDown();
+            EndpointCreationResult first = firstFuture.get();
+            EndpointCreationResult second = secondFuture.get();
+
+            assertThat(first.endpoint()).isEqualTo(second.endpoint());
+            assertThat(List.of(first.replayed(), second.replayed())).containsExactlyInAnyOrder(false, true);
+        }
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.inventory_idempotency_record WHERE tenant_id = ?",
+                        fixture.tenantId().value()))
+                .isEqualTo(1);
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.endpoint WHERE tenant_id = ?",
+                        fixture.tenantId().value()))
+                .isEqualTo(2);
+    }
+
+    @Test
+    void keysetPaginationAndFiltersRemainInsideTheVerifiedFacility() throws SQLException {
+        InventoryFixture fixture = createEndpointFixture("Pagination");
+        InventoryFixture sibling = createEndpointFixture(fixture.tenantId(), "Pagination sibling");
+        ScopedInventoryService service = new ScopedInventoryService(repository);
+        InventoryActor actor = new InventoryActor("synthetic-reader", "hhc-control-plane-ui");
+        for (int index = 0; index < 4; index++) {
+            service.createEndpoint(
+                    fixture.scope(),
+                    actor,
+                    UUID.randomUUID(),
+                    fixture.applicationId(),
+                    "HHC-SYNTHETIC page endpoint " + index);
+        }
+
+        EndpointPageSlice complete = repository.listEndpoints(
+                fixture.scope(),
+                new EndpointQuery(Optional.of(fixture.applicationId()), Optional.empty(), Optional.empty(), 100));
+        EndpointPageSlice first = repository.listEndpoints(
+                fixture.scope(),
+                new EndpointQuery(Optional.of(fixture.applicationId()), Optional.empty(), Optional.empty(), 2));
+        EndpointPageSlice second = repository.listEndpoints(
+                fixture.scope(),
+                new EndpointQuery(
+                        Optional.of(fixture.applicationId()),
+                        Optional.empty(),
+                        Optional.of(first.items().getLast().endpointId()),
+                        100));
+
+        assertThat(complete.items()).hasSize(5);
+        assertThat(first.items()).hasSize(2);
+        assertThat(first.hasMore()).isTrue();
+        assertThat(second.items()).hasSize(3);
+        assertThat(first.items()).doesNotContainAnyElementsOf(second.items());
+        assertThat(complete.items()).containsExactlyElementsOf(
+                java.util.stream.Stream.concat(first.items().stream(), second.items().stream()).toList());
+        assertThat(complete.items()).noneMatch(endpoint -> endpoint.facilityId().equals(sibling.facilityId()));
+    }
+
+    @Test
+    void optimisticUpdateRejectsStaleWritesAndMakesDecommissionTerminal() throws SQLException {
+        InventoryFixture fixture = createEndpointFixture("Optimistic update");
+        ScopedInventoryService service = new ScopedInventoryService(repository);
+
+        ScopedEndpoint renamed = service.updateEndpoint(
+                fixture.scope(),
+                fixture.endpointId(),
+                0,
+                new EndpointPatch(Optional.of("HHC-SYNTHETIC renamed"), Optional.empty()));
+        assertThat(renamed.rowVersion()).isEqualTo(1);
+        assertThat(renamed.displayName()).isEqualTo("HHC-SYNTHETIC renamed");
+
+        assertThatThrownBy(() -> service.updateEndpoint(
+                        fixture.scope(),
+                        fixture.endpointId(),
+                        0,
+                        new EndpointPatch(Optional.of("stale"), Optional.empty())))
+                .isInstanceOf(InventoryPreconditionFailedException.class);
+
+        ScopedEndpoint decommissioned = service.updateEndpoint(
+                fixture.scope(),
+                fixture.endpointId(),
+                1,
+                new EndpointPatch(Optional.empty(), Optional.of(InventoryLifecycleState.DECOMMISSIONED)));
+        assertThat(decommissioned.rowVersion()).isEqualTo(2);
+        assertThat(decommissioned.lifecycleState()).isEqualTo(InventoryLifecycleState.DECOMMISSIONED);
+        assertThat(repository.findEndpoint(fixture.scope(), fixture.endpointId())).isEmpty();
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.resource_identity WHERE resource_id = ? AND decommissioned_at IS NOT NULL",
+                        fixture.endpointId().value()))
+                .isEqualTo(1);
+        assertThatThrownBy(() -> service.updateEndpoint(
+                        fixture.scope(),
+                        fixture.endpointId(),
+                        2,
+                        new EndpointPatch(Optional.empty(), Optional.of(InventoryLifecycleState.ACTIVE))))
+                .isInstanceOf(InventoryResourceNotFoundException.class);
+    }
+
+    @Test
     void deniesASiblingFacilityBeforeItsRepresentationCrossesTheApiBoundary() throws Exception {
         InventoryFixture authorized = createEndpointFixture("Authorized Facility");
         InventoryFixture sibling = createEndpointFixture(authorized.tenantId(), "Sibling Facility");
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
-                        new ScopedEndpointController(new ScopedInventoryService(repository)))
+                        new ScopedEndpointController(
+                                new ScopedInventoryService(repository),
+                                new InventoryCursorCodec(new byte[32], Duration.ofMinutes(15))))
                 .setCustomArgumentResolvers(new VerifiedFacilityScopeArgumentResolver())
                 .setControllerAdvice(new InventoryProblemAdvice())
                 .build();
@@ -341,7 +493,8 @@ class JdbcScopedEndpointRepositoryTest {
                 VALUES (?, ?, ?, ?, ?, ?)
                 """, endpointId.value(), tenantId.value(), organizationId, facilityId.value(), applicationId, "HHC-SYNTHETIC " + label + " Endpoint");
 
-        return new InventoryFixture(tenantId, facilityId, endpointId);
+        return new InventoryFixture(
+                tenantId, facilityId, new ApplicationId(applicationId), endpointId);
     }
 
     private static void allocate(UUID id, String type) throws SQLException {
@@ -374,7 +527,11 @@ class JdbcScopedEndpointRepositoryTest {
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
     }
 
-    private record InventoryFixture(TenantId tenantId, FacilityId facilityId, EndpointId endpointId) {
+    private record InventoryFixture(
+            TenantId tenantId,
+            FacilityId facilityId,
+            ApplicationId applicationId,
+            EndpointId endpointId) {
         VerifiedFacilityScope scope() {
             return new VerifiedFacilityScope(tenantId, facilityId);
         }

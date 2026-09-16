@@ -88,6 +88,10 @@ Ogni operazione persistence sulle secret reference richiede `VerifiedFacilitySco
 
 Il modello conserva solo ID logico, provider/purpose/stato chiusi e un binding locale UUID non esportabile. La projection portabile omette scope e binding e richiede rebinding nel target; valore e locator provider restano fuori dal Platform DB. Dettagli, rotazione e test sono in [P1-0105](../roadmap/phase-1-p1-0105-implementation.md).
 
+### 6.3 Write boundary Endpoint implementato in P1-0106
+
+Il ruolo human `FacilityOperator` riceve `HHC_INVENTORY_READ` e `HHC_INVENTORY_WRITE`; `Auditor` e il workload `RuntimeAgent` restano read-only, mentre `FlowDeveloper` non riceve capability inventory in questo slice. List, create e PATCH mantengono `VerifiedFacilityScope` fino alle statement SQL. L'idempotency namespace è separato per Tenant, Facility, digest subject e client allowlisted; cursor e mutazioni non accettano scope dal client. I dettagli sono in [P1-0106](../roadmap/phase-1-p1-0106-implementation.md).
+
 ## 7. Isolamento per layer
 
 | Layer | Controllo |

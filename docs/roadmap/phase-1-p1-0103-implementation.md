@@ -21,7 +21,7 @@ scope verificato server-side
     → prepared statement con tenant_id + facility_id + endpoint_id
 ```
 
-Il vertical slice legge un Endpoint perché è il livello più profondo della gerarchia e consente di provare contemporaneamente Tenant, Facility, ancestry completa e non-enumerabilità. L'API completa di creazione, collection, pagination, filtro, ETag e idempotenza resta P1-0106.
+Il vertical slice legge un Endpoint perché è il livello più profondo della gerarchia e consente di provare contemporaneamente Tenant, Facility, ancestry completa e non-enumerabilità. Creazione, collection, pagination, filtro, ETag e idempotenza sono state successivamente consegnate da [P1-0106](phase-1-p1-0106-implementation.md).
 
 ## Invarianti
 
@@ -153,12 +153,12 @@ Non sono inclusi:
 
 - autenticazione OIDC, RBAC minimo e workload identity, successivamente introdotti da P1-0104; l'ABAC completo resta nei work item di policy/authorization successivi;
 - secret reference scoped, schema senza valore/locator ed export con rebinding obbligatorio, successivamente introdotti da P1-0105; resolver provider e rotazione end-to-end restano nei work item runtime/deployment;
-- create/update/decommission, collection, pagination, ETag e idempotenza, previsti da P1-0106;
+- create/update/decommission, collection, pagination, ETag e idempotenza, successivamente consegnati da P1-0106;
 - audit journal, previsto da P1-0107;
 - matrice negativa per ogni risorsa/layer e RLS defense-in-depth, prevista da P1-0108;
 - seed e benchmark su scala, previsti da P1-0110.
 
-P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference. G2 rimane aperto fino al completamento di P1-0106…P1-0110 e della qualification prevista.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference e P1-0106 le collection/mutazioni Endpoint. G2 rimane aperto fino al completamento di P1-0107…P1-0110 e della qualification prevista.
 
 ## Fonti ufficiali
 
