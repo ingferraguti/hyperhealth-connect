@@ -190,7 +190,7 @@ Attività:
 - P1-0103: **IMPLEMENTED** — scope Tenant/Facility tipizzato e obbligatorio in repository, service e API; header client non autorevoli, lookup SQL scoped e risposta uniforme per risorsa assente/non visibile; evidenza in [phase-1-p1-0103-implementation.md](phase-1-p1-0103-implementation.md);
 - P1-0104: **IMPLEMENTED** — resource server OIDC fail-closed, firma/issuer/lifetime/audience/`azp` verificati, ruoli minimi e profili human/workload separati, scope firmato propagato all'API; evidenza in [phase-1-p1-0104-implementation.md](phase-1-p1-0104-implementation.md);
 - P1-0105: **IMPLEMENTED** — reference scoped e immutabile, binding locale UUID privo di locator, schema senza materiale segreto, export portabile con rebinding obbligatorio e overlap di rotazione; evidenza in [phase-1-p1-0105-implementation.md](phase-1-p1-0105-implementation.md);
-- P1-0106: esporre API inventory con pagination, filtering, optimistic concurrency e idempotency;
+- P1-0106: **IMPLEMENTED** — API Endpoint facility-scoped con keyset pagination e filtri allowlisted, cursor HMAC scoped/TTL, ETag/`If-Match` e idempotenza transazionale concorrente; evidenza in [phase-1-p1-0106-implementation.md](phase-1-p1-0106-implementation.md);
 - P1-0107: auditare creazione, modifica, dismissione e accesso amministrativo;
 - P1-0108: creare test negativi cross-tenant e cross-facility su ogni layer;
 - P1-0109: verificare Unicode, timezone, locale e conservazione degli identificativi originali;

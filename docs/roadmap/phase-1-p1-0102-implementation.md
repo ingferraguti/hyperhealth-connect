@@ -27,7 +27,7 @@ Le garanzie fondamentali non dipendono dalla sola correttezza del codice applica
 7. le assegnazioni di scope sono storicizzate e non sovrascritte;
 8. i principali access path scoped e operativi hanno indici dedicati e validati.
 
-Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, secret reference, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md), il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md) e le secret reference scoped da [P1-0105](phase-1-p1-0105-implementation.md). P1-0106, P1-0107 e P1-0108 restano responsabili dei rispettivi controlli. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
+Al momento della consegna questo incremento non implementava repository, API, authorization OIDC/RBAC, secret reference, audit journal o row-level security. Il percorso scoped repository/service/API è stato successivamente introdotto da [P1-0103](phase-1-p1-0103-implementation.md), il boundary OIDC/RBAC da [P1-0104](phase-1-p1-0104-implementation.md), le secret reference scoped da [P1-0105](phase-1-p1-0105-implementation.md) e la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md). P1-0107 e P1-0108 restano responsabili di audit e matrice negativa estesa. Il database impedisce ancestry incoerenti, ma non sostituisce la decisione autorizzativa prima dell'accesso al payload.
 
 ## Artifact consegnati
 
@@ -38,6 +38,8 @@ Al momento della consegna questo incremento non implementava repository, API, au
 | `V003__expand__inventory_query_indexes.sql` | crea gli indici operativi con `CREATE INDEX CONCURRENTLY` |
 | `V003__expand__inventory_query_indexes.sql.conf` | esegue V003 fuori da una transaction block, come richiesto da PostgreSQL |
 | `V004__expand__scoped_secret_references.sql` | aggiunta P1-0105: reference e binding Endpoint scoped, senza valore o locator provider, con indici e lifecycle di revoca |
+| `V005__expand__inventory_api_idempotency.sql` | aggiunta P1-0106: claim idempotenza scoped, digest e response snapshot Endpoint allowlisted |
+| `V006__expand__endpoint_api_indexes.sql` | aggiunta P1-0106: indici concorrenti covering per keyset page di Facility e Application |
 | `PlatformCoreMigrationTest` | prova fresh install, upgrade N-1, catalogo, constraint, immutabilità e Runtime Cell su PostgreSQL reale |
 | `governance/platform-db-schema.yml` | pubblica digest aggregato e SHA-256 di migration/configurazione per evidenza e drift detection |
 | `scripts/phase1-p1-0102-gate.ps1` | verifica policy, naming, DDL non distruttivo e digest; produce evidenza JSON in CI |
@@ -67,7 +69,7 @@ La riga del ledger non viene cancellata. `allocated_at` e `decommissioned_at` co
 
 La duplicazione controllata dell'ancestry è intenzionale. Permette predicate scoped espliciti e indici left-prefix senza join preliminari, ma soprattutto fa sì che una Facility non possa riferire un'Organization appartenente a un altro Tenant. Lo stesso controllo si propaga fino a Endpoint.
 
-Ogni tabella espone `lifecycle_state`, `row_version`, `created_at`, `updated_at` e `decommissioned_at`. Lo stato appartiene al vocabolario chiuso `ACTIVE`, `SUSPENDED`, `DECOMMISSIONED`; quest'ultimo richiede un timestamp di dismissione, mentre gli altri lo vietano. `row_version` è predisposto per l'optimistic concurrency di P1-0106; il suo incremento atomico sarà applicato dal futuro write path costruito sulla fondazione scoped di P1-0103 e non viene simulato con un trigger implicito.
+Ogni tabella espone `lifecycle_state`, `row_version`, `created_at`, `updated_at` e `decommissioned_at`. Lo stato appartiene al vocabolario chiuso `ACTIVE`, `SUSPENDED`, `DECOMMISSIONED`; quest'ultimo richiede un timestamp di dismissione, mentre gli altri lo vietano. `row_version` è consumato dall'optimistic concurrency P1-0106: il write path Endpoint lo incrementa atomicamente con il predicate `row_version`, senza trigger implicito.
 
 Display name vuoti o oltre 256 caratteri e sequenze temporali incoerenti sono rifiutati. I display name non sono chiavi e possono coincidere tra aziende o facility.
 
@@ -196,7 +198,7 @@ La presenza di `IF NOT EXISTS` sugli indici limita gli errori di retry, ma non s
 | scope shape/duplicate | shape incoerente, duplicato attivo e revoca dell'ultimo scope rifiutati |
 | secret reference P1-0105 | catalogo a colonne allowlisted, enum/UUID/ancestry validati, binding immutabile, hard delete rifiutato |
 
-Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0106–P1-0110 e le relative matrici non sono concluse.
+Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. La qualification completa G2 resta aperta finché P1-0107–P1-0110 e le relative matrici non sono concluse.
 
 ## Configurazione operativa minima
 

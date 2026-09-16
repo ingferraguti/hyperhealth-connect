@@ -131,7 +131,9 @@ class HhcOidcTokenValidatorTest {
                         "hhc-control-plane-ui"));
         assertThat(operator.getAuthorities())
                 .extracting("authority")
-                .containsExactly(HhcJwtAuthenticationConverter.INVENTORY_READ_AUTHORITY);
+                .containsExactly(
+                        HhcJwtAuthenticationConverter.INVENTORY_READ_AUTHORITY,
+                        HhcJwtAuthenticationConverter.INVENTORY_WRITE_AUTHORITY);
         assertThat(operator.identity().facilityScope().tenantId().externalForm()).startsWith("t-");
 
         HhcJwtAuthenticationToken developer = (HhcJwtAuthenticationToken) converter.convert(

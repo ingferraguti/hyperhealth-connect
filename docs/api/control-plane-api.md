@@ -4,7 +4,7 @@
 |---|---|
 | Stato | Baseline enterprise 1.0 |
 | Ambito | Governance HHC multitenant, multiazienda e multifacility |
-| Ultimo aggiornamento | 14 settembre 2026 |
+| Ultimo aggiornamento | 16 settembre 2026 |
 | Responsabili | Control Plane, Architecture, Security, SRE, Product Governance |
 | SLO | 99,9% mensile; RTO ≤4 ore; RPO ≤15 minuti |
 
@@ -165,7 +165,7 @@ POST           /api/v1/inventory-validation-jobs
 
 ### 7.3 Incremento P1-0103
 
-Il primo vertical slice implementato è `GET /api/v1/endpoints/{endpointId}`. Non è ancora la inventory API completa di P1-0106: prova il passaggio obbligatorio dello scope Tenant/Facility attraverso HTTP, service e repository PostgreSQL.
+Il primo vertical slice implementato da P1-0103 era `GET /api/v1/endpoints/{endpointId}`: ha provato il passaggio obbligatorio dello scope Tenant/Facility attraverso HTTP, service e repository PostgreSQL. P1-0106 lo ha successivamente esteso con collection e mutazioni descritte nella sezione 7.6.
 
 Lo scope deriva esclusivamente da un attributo server-side tipizzato `VerifiedFacilityScope`. Header o query parameter inviati dal client non lo creano e non lo sovrascrivono. P1-0104 ha collegato l'attributo a un access token OIDC verificato; la configurazione resta disabilitata per default e deny-all finché non viene fornito un trust profile completo.
 
@@ -192,7 +192,28 @@ Il modello persistence introduce `SecretReferenceId` canonico `sref-<uuid>`, pro
 
 La projection portabile espone soltanto ID logico, provider family, purpose, stato, `rowVersion` e `requiresRebinding=true`. Omette anche il binding locale: un restore o una promozione tra ambienti non può riutilizzare implicitamente il secret di origine. Due reference dello stesso purpose possono convivere durante una rotazione; una reference revocata è esclusa dalle viste utilizzabili.
 
-P1-0105 non espone ancora route HTTP di gestione. Le API CRUD, idempotenza, ETag, property authorization e command asincroni appartengono a P1-0106 e dovranno conservare questo contratto senza introdurre campi liberi capaci di trasportare materiale segreto. Specifica ed evidenze sono in [phase-1-p1-0105-implementation.md](../roadmap/phase-1-p1-0105-implementation.md).
+P1-0105 non espone route HTTP di gestione delle secret reference. P1-0106 ha successivamente introdotto create/list/read/PATCH per Endpoint senza aggiungere alla representation campi secret, locator o binding. Le future route di secret management dovranno conservare questo contratto e applicare property authorization dedicata. Specifica ed evidenze della fondazione sono in [phase-1-p1-0105-implementation.md](../roadmap/phase-1-p1-0105-implementation.md).
+
+### 7.6 Incremento P1-0106 — Endpoint API v0.2
+
+Il vertical slice Endpoint espone:
+
+```text
+GET              /api/v1/endpoints
+POST             /api/v1/endpoints
+GET              /api/v1/endpoints/{endpointId}
+PATCH            /api/v1/endpoints/{endpointId}
+```
+
+La collection usa keyset pagination ordinata per Endpoint ID, limite 1–100 e filtri allowlisted `applicationId`/`lifecycleState`. Il cursor HMAC-SHA-256 è a TTL, non contiene PHI/scope in chiaro ed è firmato insieme a subject, client, Tenant, Facility, filtri, limite e sort. Offset e total count non fanno parte del contratto.
+
+`POST` richiede un `Idempotency-Key` UUIDv4. Claim, allocazione ID, insert Endpoint e response snapshot sono nella stessa transazione PostgreSQL; la concorrenza sulla stessa chiave/body produce un solo effetto e replay identico, mentre un body diverso produce `409 HHC-CTRL-IDEMPOTENCY-COLLISION`. Chiave e subject raw non sono persistiti.
+
+`PATCH` usa `application/merge-patch+json`, accetta soltanto display name e lifecycle e richiede un ETag forte `If-Match: "rv-N"`. L'assenza produce 428, una versione stale 412. Decommission è terminale e non cancella identity o history. Solo `FacilityOperator` riceve `HHC_INVENTORY_WRITE`; Auditor e RuntimeAgent restano read-only.
+
+Le API dei livelli superiori non sono pubblicate sotto un token limitato alla Facility. Audit append-only, matrice negativa completa, qualification Unicode e seed/benchmark restano P1-0107…P1-0110. Contratto, failure matrix, casi d'uso e fonti verificate sono in [phase-1-p1-0106-implementation.md](../roadmap/phase-1-p1-0106-implementation.md).
+
+Il contratto OpenAPI versionato del vertical slice è [inventory-endpoints-v1.openapi.yaml](./openapi/inventory-endpoints-v1.openapi.yaml).
 
 ## 8. Catalogo asset
 

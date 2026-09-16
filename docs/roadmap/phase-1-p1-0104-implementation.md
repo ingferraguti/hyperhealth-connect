@@ -24,7 +24,7 @@ P1-0104 introduce il trust boundary che mancava al percorso scoped realizzato da
 8. risponde con Problem Details uniforme e privo di token, claim, chiavi, SQL o dati di risorse negate;
 9. resta deny-by-default se OIDC non è abilitato o se la configurazione di trust è incompleta.
 
-L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md); API inventory completa, audit journal e matrice negativa estesa a ogni risorsa restano rispettivamente P1-0106, P1-0107 e P1-0108.
+L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md) e la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md); audit journal e matrice negativa estesa restano P1-0107 e P1-0108.
 
 ## 2. Trust boundary e flusso della richiesta
 
@@ -242,7 +242,7 @@ Test:
 | Tema | Stato dopo P1-0104 | Owner/work item |
 |---|---|---|
 | secret/private key workload | reference scoped/binding opaco consegnati da P1-0105; valore e provisioning provider restano esterni | runtime/deployment qualification |
-| inventory CRUD e grant persistenti | fuori dal vertical slice | P1-0106 |
+| inventory Endpoint CRUD e grant | successivamente consegnati | P1-0106 |
 | audit append-only di allow/deny | non ancora consegnato; correlation disponibile | P1-0107 |
 | matrix completa ogni endpoint/layer | subset OIDC critico consegnato | P1-0108 / G2 |
 | revoca near-real-time | dipende dal profilo IdP e TTL | Identity & Access / G2 |

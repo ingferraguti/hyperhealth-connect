@@ -1,6 +1,9 @@
 spring:
   application:
     name: hhc-control-plane
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
 management:
   endpoints:
     web:
@@ -31,6 +34,10 @@ hhc:
         max-token-lifetime: ${HHC_OIDC_WORKLOAD_MAX_TOKEN_LIFETIME:5m}
   inventory:
     enabled: ${HHC_INVENTORY_ENABLED:false}
+  inventory-api:
+    cursor-signing-key: ${HHC_INVENTORY_CURSOR_SIGNING_KEY:}
+    cursor-ttl: ${HHC_INVENTORY_CURSOR_TTL:15m}
+    idempotency-retention: ${HHC_INVENTORY_IDEMPOTENCY_RETENTION:24h}
   platform-database:
     jdbc-url: ${HHC_PLATFORM_DB_JDBC_URL:}
     username: ${HHC_PLATFORM_DB_USERNAME:}

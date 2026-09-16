@@ -2,9 +2,9 @@ schemaVersion: 1
 schema: platform_core
 databaseBaseline: PostgreSQL-18.6
 migrationEngine: Flyway-13.5.0
-generatedAt: 2026-09-15
+generatedAt: 2026-09-16
 digestAlgorithm: SHA-256
-aggregateDigest: ae91cd75204b9f875fc15471e4a7cf22c6b431fc2577e281e6ade15ebc6af6be
+aggregateDigest: 7c3c96c7f8e3084d920fed0f0bfe479948e10063389df158a8ba02478c075e75
 aggregateCanonicalization: files-sorted-by-name-each-line-filename-space-lowercase-sha256-lf-terminated
 migrations:
   - version: "001"
@@ -25,3 +25,13 @@ migrations:
     phase: expand-secret-references
     file: platform/control-plane/src/main/resources/db/migration/V004__expand__scoped_secret_references.sql
     sha256: 0ea81a25ae64ba997178e74eec24ffd9b16a60b456848f63d9c9da44b73349cd
+  - version: "005"
+    phase: expand-inventory-api-idempotency
+    file: platform/control-plane/src/main/resources/db/migration/V005__expand__inventory_api_idempotency.sql
+    sha256: 5794fffcabbaeb182089719e1d3e1a0181b67868cafc5c889380777fbaf2da60
+  - version: "006"
+    phase: expand-endpoint-api-indexes
+    file: platform/control-plane/src/main/resources/db/migration/V006__expand__endpoint_api_indexes.sql
+    sha256: 0b2fe68ad1f9da98aa60e93e43a788da1643a81cd0ee90ef90f5dfb803ab6db0
+    configurationFile: platform/control-plane/src/main/resources/db/migration/V006__expand__endpoint_api_indexes.sql.conf
+    configurationSha256: bb1a39a7dec8a7851648456a6522eb7d11694e13c37ba4bed844d1d7dc0d3a6b

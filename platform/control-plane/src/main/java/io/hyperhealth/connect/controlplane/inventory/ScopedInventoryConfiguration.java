@@ -1,6 +1,7 @@
 package io.hyperhealth.connect.controlplane.inventory;
 
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,13 +18,17 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import io.hyperhealth.connect.controlplane.inventory.api.VerifiedFacilityScopeArgumentResolver;
+import io.hyperhealth.connect.controlplane.inventory.api.InventoryCursorCodec;
 import io.hyperhealth.connect.controlplane.secret.JdbcSecretReferenceRepository;
 import io.hyperhealth.connect.controlplane.secret.SecretReferenceRepository;
 
 /** Fail-closed wiring for the scoped inventory slice and its bounded connection pool. */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(prefix = "hhc.inventory", name = "enabled", havingValue = "true")
-@EnableConfigurationProperties(ScopedInventoryConfiguration.PlatformDatabaseProperties.class)
+@EnableConfigurationProperties({
+    ScopedInventoryConfiguration.PlatformDatabaseProperties.class,
+    ScopedInventoryConfiguration.InventoryApiProperties.class
+})
 public class ScopedInventoryConfiguration implements WebMvcConfigurer {
 
     private static final Duration MINIMUM_POOL_TIMEOUT = Duration.ofMillis(250);
@@ -63,8 +68,17 @@ public class ScopedInventoryConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    ScopedInventoryService scopedInventoryService(ScopedEndpointRepository endpointRepository) {
-        return new ScopedInventoryService(endpointRepository);
+    ScopedInventoryService scopedInventoryService(
+            ScopedEndpointRepository endpointRepository, InventoryApiProperties properties) {
+        properties.validate();
+        return new ScopedInventoryService(
+                endpointRepository, java.time.Clock.systemUTC(), properties.idempotencyRetention());
+    }
+
+    @Bean
+    InventoryCursorCodec inventoryCursorCodec(InventoryApiProperties properties) {
+        properties.validate();
+        return new InventoryCursorCodec(properties.decodedCursorSigningKey(), properties.cursorTtl());
     }
 
     @Override
@@ -128,6 +142,53 @@ public class ScopedInventoryConfiguration implements WebMvcConfigurer {
         private static void requireAtLeast(Duration value, Duration minimum, String name) {
             if (value.compareTo(minimum) < 0) {
                 throw new IllegalStateException(name + " must be at least " + minimum);
+            }
+        }
+    }
+
+    @ConfigurationProperties("hhc.inventory-api")
+    public record InventoryApiProperties(
+            String cursorSigningKey,
+            Duration cursorTtl,
+            Duration idempotencyRetention) {
+
+        public InventoryApiProperties {
+            cursorTtl = cursorTtl == null ? Duration.ofMinutes(15) : cursorTtl;
+            idempotencyRetention = idempotencyRetention == null
+                    ? Duration.ofHours(24)
+                    : idempotencyRetention;
+        }
+
+        void validate() {
+            decodedCursorSigningKey();
+            requireBetween(cursorTtl, Duration.ofMinutes(1), Duration.ofHours(1), "cursorTtl");
+            requireBetween(
+                    idempotencyRetention,
+                    Duration.ofHours(1),
+                    Duration.ofDays(7),
+                    "idempotencyRetention");
+        }
+
+        byte[] decodedCursorSigningKey() {
+            if (cursorSigningKey == null || cursorSigningKey.isBlank()) {
+                throw new IllegalStateException(
+                        "cursorSigningKey must be injected when inventory is enabled");
+            }
+            try {
+                byte[] decoded = Base64.getUrlDecoder().decode(cursorSigningKey);
+                if (decoded.length < 32) {
+                    throw new IllegalStateException("cursorSigningKey must contain at least 256 bits");
+                }
+                return decoded;
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalStateException("cursorSigningKey must be unpadded base64url", exception);
+            }
+        }
+
+        private static void requireBetween(
+                Duration value, Duration minimum, Duration maximum, String name) {
+            if (value.compareTo(minimum) < 0 || value.compareTo(maximum) > 0) {
+                throw new IllegalStateException(name + " is outside the allowed range");
             }
         }
     }

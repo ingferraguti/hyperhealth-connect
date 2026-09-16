@@ -75,6 +75,10 @@ public class OidcSecurityConfiguration {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/endpoints/**")
                         .hasAuthority(HhcJwtAuthenticationConverter.INVENTORY_READ_AUTHORITY)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/endpoints")
+                        .hasAuthority(HhcJwtAuthenticationConverter.INVENTORY_WRITE_AUTHORITY)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/endpoints/**")
+                        .hasAuthority(HhcJwtAuthenticationConverter.INVENTORY_WRITE_AUTHORITY)
                         .anyRequest()
                         .denyAll());
 

@@ -22,6 +22,9 @@ $required = @(
     "$migrationDirectory/V003__expand__inventory_query_indexes.sql",
     "$migrationDirectory/V003__expand__inventory_query_indexes.sql.conf",
     "$migrationDirectory/V004__expand__scoped_secret_references.sql",
+    "$migrationDirectory/V005__expand__inventory_api_idempotency.sql",
+    "$migrationDirectory/V006__expand__endpoint_api_indexes.sql",
+    "$migrationDirectory/V006__expand__endpoint_api_indexes.sql.conf",
     $manifestPath,
     'docs/roadmap/phase-1-p1-0102-implementation.md',
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java'
@@ -32,15 +35,21 @@ Add-Check 'p1-0102-artifacts' ($missing.Count -eq 0) $(if ($missing) { "missing:
 $sqlFiles = @(Get-ChildItem -LiteralPath $migrationDirectory -File -Filter '*.sql' | Sort-Object Name)
 $badNames = @($sqlFiles | Where-Object { $_.Name -notmatch '^V[0-9]{3}__(expand|migrate|contract)__[a-z0-9_]+\.sql$' })
 $versions = @($sqlFiles | ForEach-Object { [regex]::Match($_.Name, '^V([0-9]{3})__').Groups[1].Value })
-Add-Check 'migration-naming' ($badNames.Count -eq 0 -and ($versions -join ',') -eq '001,002,003,004') 'forward migrations are ordered and phase-labelled V001 through V004'
+Add-Check 'migration-naming' ($badNames.Count -eq 0 -and ($versions -join ',') -eq '001,002,003,004,005,006') 'forward migrations are ordered and phase-labelled V001 through V006'
 
 $destructive = @($sqlFiles | Where-Object { (Get-Content -LiteralPath $_.FullName -Raw) -match '(?im)^\s*(DROP|TRUNCATE)\s' })
 Add-Check 'greenfield-nondestructive' ($destructive.Count -eq 0) $(if ($destructive) { "destructive DDL in: $($destructive.Name -join ', ')" } else { 'baseline contains no DROP or TRUNCATE operation' })
 
-$indexSql = Get-Content -LiteralPath "$migrationDirectory/V003__expand__inventory_query_indexes.sql" -Raw
-$indexConfig = Get-Content -LiteralPath "$migrationDirectory/V003__expand__inventory_query_indexes.sql.conf" -Raw
+$indexSql = @(
+    Get-Content -LiteralPath "$migrationDirectory/V003__expand__inventory_query_indexes.sql" -Raw
+    Get-Content -LiteralPath "$migrationDirectory/V006__expand__endpoint_api_indexes.sql" -Raw
+) -join "`n"
+$indexConfigs = @(
+    Get-Content -LiteralPath "$migrationDirectory/V003__expand__inventory_query_indexes.sql.conf" -Raw
+    Get-Content -LiteralPath "$migrationDirectory/V006__expand__endpoint_api_indexes.sql.conf" -Raw
+)
 $concurrentCount = [regex]::Matches($indexSql, '(?im)^CREATE (UNIQUE )?INDEX CONCURRENTLY').Count
-Add-Check 'concurrent-index-policy' ($concurrentCount -eq 10 -and $indexConfig -match '(?m)^executeInTransaction=false\s*$') '10 application indexes are concurrent and the script is non-transactional'
+Add-Check 'concurrent-index-policy' ($concurrentCount -eq 12 -and @($indexConfigs | Where-Object { $_ -notmatch '(?m)^executeInTransaction=false\s*$' }).Count -eq 0) '12 application indexes are concurrent and both scripts are non-transactional'
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw
 $manifestFiles = @{}
@@ -51,11 +60,11 @@ $migrationMatches = [regex]::Matches(
 foreach ($match in $migrationMatches) {
     $manifestFiles[$match.Groups['file'].Value] = $match.Groups['sha'].Value
 }
-$configurationMatch = [regex]::Match(
+$configurationMatches = [regex]::Matches(
     $manifest,
     '(?m)^\s+configurationFile:\s+(?<file>\S+)\s*\r?\n\s+configurationSha256:\s+(?<sha>[0-9a-f]{64})\s*$'
 )
-if ($configurationMatch.Success) {
+foreach ($configurationMatch in $configurationMatches) {
     $manifestFiles[$configurationMatch.Groups['file'].Value] = $configurationMatch.Groups['sha'].Value
 }
 
