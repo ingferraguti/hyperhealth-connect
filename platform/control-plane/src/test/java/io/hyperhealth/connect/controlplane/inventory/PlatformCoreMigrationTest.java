@@ -115,6 +115,36 @@ class PlatformCoreMigrationTest {
     }
 
     @Test
+    void usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant() throws SQLException {
+        flyway(null).migrate();
+
+        assertThat(queryStrings("SHOW server_encoding")).containsExactly("UTF8");
+        assertThat(queryStrings("SHOW client_encoding")).containsExactly("UTF8");
+        assertThat(queryLong("""
+                SELECT count(*)
+                 FROM information_schema.columns
+                 WHERE table_schema = 'platform_core'
+                   AND table_name <> 'flyway_schema_history'
+                   AND data_type = 'timestamp without time zone'
+                """))
+                .isZero();
+        assertThat(queryLong("""
+                SELECT count(*)
+                  FROM information_schema.columns
+                 WHERE table_schema = 'platform_core'
+                   AND column_name IN (
+                       'allocated_at', 'created_at', 'updated_at', 'decommissioned_at',
+                       'revoked_at', 'expires_at', 'occurred_at', 'recorded_at', 'retired_at')
+                   AND data_type = 'timestamp with time zone'
+                """))
+                .isGreaterThanOrEqualTo(20);
+        assertThat(queryLong("SELECT char_length('😀')")).isEqualTo(1L);
+        assertThat(queryLong("SELECT octet_length('😀')")).isEqualTo(4L);
+        assertThat(queryLong("SELECT char_length(U&'Cafe\\0301')")).isEqualTo(5L);
+        assertThat(queryLong("SELECT octet_length(U&'Cafe\\0301')")).isEqualTo(6L);
+    }
+
+    @Test
     void upgradesAnNMinusOneSchemaWithoutLosingExistingInventory() throws SQLException {
         assertThat(flyway("1").migrate().migrationsExecuted).isEqualTo(1);
         UUID tenantId = UUID.randomUUID();

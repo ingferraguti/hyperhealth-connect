@@ -198,7 +198,7 @@ La presenza di `IF NOT EXISTS` sugli indici limita gli errori di retry, ma non s
 | scope shape/duplicate | shape incoerente, duplicato attivo e revoca dell'ultimo scope rifiutati |
 | secret reference P1-0105 | catalogo a colonne allowlisted, enum/UUID/ancestry validati, binding immutabile, hard delete rifiutato |
 
-Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. P1-0108 ha successivamente consegnato la matrice negativa; la qualification completa G2 resta aperta per P1-0109, P1-0110 e le prove di gate residue.
+Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. P1-0108 ha successivamente consegnato la matrice negativa e P1-0109 la qualification Unicode/locale/timezone; la qualification completa G2 resta aperta per P1-0110 e le prove di gate residue.
 
 ## Configurazione operativa minima
 

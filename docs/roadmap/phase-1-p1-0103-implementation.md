@@ -158,7 +158,7 @@ Non sono inclusi:
 - matrice negativa per i layer del vertical slice, consegnata da P1-0108; RLS defense-in-depth resta un hardening separato non ancora implementato;
 - seed e benchmark su scala, previsti da P1-0110.
 
-P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference, P1-0106 le collection/mutazioni Endpoint, P1-0107 il relativo journal e P1-0108 la matrice negativa. G2 rimane aperto per P1-0109, P1-0110 e la qualification prevista.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference, P1-0106 le collection/mutazioni Endpoint, P1-0107 il relativo journal, P1-0108 la matrice negativa e P1-0109 la qualification Unicode/locale/timezone. G2 rimane aperto per P1-0110 e la qualification prevista.
 
 ## Fonti ufficiali
 

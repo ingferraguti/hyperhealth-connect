@@ -26,7 +26,7 @@ Sono consegnati:
 
 Il perimetro è deliberatamente limitato alle superfici implementate. Non esistono ancora API amministrative per Tenant, Organization, Facility, Application o Runtime Cell; non viene quindi simulata una copertura inesistente. Non sono introdotti RLS PostgreSQL, cache distribuite, resolver dei provider segreti o un sink di security decision indipendente. Questi elementi restano work item espliciti, non prerequisiti implicitamente dati per acquisiti.
 
-P1-0108 è completata; WP1-01 e Gate G2 restano aperti per P1-0109, P1-0110 e per le ulteriori prove di gate descritte nella roadmap.
+P1-0108 è completata. P1-0109 ha successivamente qualificato Unicode, locale, timezone e ID; WP1-01 e Gate G2 restano aperti per P1-0110 e per le ulteriori prove di gate descritte nella roadmap.
 
 ## 2. Modello di minaccia
 
@@ -247,7 +247,7 @@ Il conteggio locale è una fotografia, non un criterio hard-coded. Il criterio d
 | IdP reale, revoca e rollover remoto | validator sintetico locale | IAM qualification/G2 |
 | restore/failover end-to-end | requisito definito, drill non eseguito | WP1-11/M5 |
 | scala/noisy-neighbor | query indicizzate, benchmark pendente | P1-0110/G2 |
-| Unicode/locale/timezone | non parte di questo incremento | P1-0109 |
+| Unicode/locale/timezone | consegnata successivamente | [P1-0109](phase-1-p1-0109-implementation.md) |
 | security review indipendente | richiesta ma non sostituibile dal maintainer | staffing checkpoint G2 |
 
 ## 12. Fonti ufficiali e data di verifica

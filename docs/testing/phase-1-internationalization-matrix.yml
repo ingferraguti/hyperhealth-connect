@@ -1,0 +1,84 @@
+schemaVersion: 1
+activity: P1-0109
+baselineDate: 2026-09-17
+status: implemented
+dataPolicy: synthetic-only
+scopeModel: verified-tenant-and-facility
+resourceSurface: endpoint-inventory
+qualificationBoundary:
+  included:
+    - unicode-code-point-validation
+    - exact-unicode-sequence-preservation
+    - utf8-json-and-postgresql-round-trip
+    - locale-independent-identifiers-and-enums
+    - timezone-independent-persisted-instants
+    - dst-overlap
+    - idempotency-and-audit-timestamps
+  excluded:
+    - clinical-payload-and-patient-identifiers
+    - locale-aware-search-and-collation
+    - source-timezone-preservation-for-clinical-events
+    - terminology-display-language-negotiation
+  exclusionRationale: >-
+    P1-0109 qualifies the implemented Endpoint inventory vertical slice. Clinical payloads,
+    patient identifiers, terminology and source-zone semantics belong to later ingestion and
+    semantic work packages and are not falsely certified here.
+
+invariants:
+  - id: I18N-01
+    statement: Accepted display names are well-formed Unicode and are limited by code points, not UTF-16 code units.
+  - id: I18N-02
+    statement: The accepted Unicode sequence is preserved exactly; no implicit NFC, NFD or compatibility normalization occurs.
+  - id: I18N-03
+    statement: Boundary whitespace is removed by the documented API policy while internal Unicode whitespace is preserved.
+  - id: I18N-04
+    statement: JSON and PostgreSQL transport accepted strings as UTF-8 without byte or code-point loss.
+  - id: I18N-05
+    statement: Technical identifiers are canonical ASCII prefix plus lowercase UUID and are rejected, never rewritten, when non-canonical.
+  - id: I18N-06
+    statement: Identifier parsing and lifecycle enums are independent from JVM default locale and HTTP Accept-Language.
+  - id: I18N-07
+    statement: Every domain instant is persisted as PostgreSQL timestamptz and compared as an Instant.
+  - id: I18N-08
+    statement: Session timezone and a DST overlap can change rendering only, never the represented instant, expiry or audit chain.
+
+cases:
+  - {id: UNI-NFD-EXACT, dimension: unicode, layer: service, oracle: exact-code-point-sequence, automatedBy: InventoryInternationalizationTest.preservesUnicodeCodePointsWithoutLocaleDependentOrImplicitNormalization}
+  - {id: UNI-MULTISCRIPT, dimension: unicode, layer: service, oracle: exact-code-point-sequence, automatedBy: InventoryInternationalizationTest.preservesUnicodeCodePointsWithoutLocaleDependentOrImplicitNormalization}
+  - {id: UNI-EMOJI, dimension: unicode, layer: service, oracle: exact-code-point-sequence, automatedBy: InventoryInternationalizationTest.preservesUnicodeCodePointsWithoutLocaleDependentOrImplicitNormalization}
+  - {id: UNI-256-CODEPOINTS, dimension: unicode, layer: service, oracle: accepted-at-boundary, automatedBy: InventoryInternationalizationTest.countsSupplementaryCharactersAsCodePointsInsteadOfUtf16CodeUnits}
+  - {id: UNI-257-CODEPOINTS, dimension: unicode, layer: service, oracle: rejected-before-persistence, automatedBy: InventoryInternationalizationTest.countsSupplementaryCharactersAsCodePointsInsteadOfUtf16CodeUnits}
+  - {id: UNI-ORPHAN-HIGH-SURROGATE, dimension: unicode, layer: service, oracle: rejected-before-persistence, automatedBy: InventoryInternationalizationTest.rejectsMalformedUtf16AndControlCharactersBeforePersistence}
+  - {id: UNI-ORPHAN-LOW-SURROGATE, dimension: unicode, layer: service, oracle: rejected-before-persistence, automatedBy: InventoryInternationalizationTest.rejectsMalformedUtf16AndControlCharactersBeforePersistence}
+  - {id: UNI-CONTROL-CHARACTER, dimension: unicode, layer: service, oracle: rejected-before-persistence, automatedBy: InventoryInternationalizationTest.rejectsMalformedUtf16AndControlCharactersBeforePersistence}
+  - {id: UNI-BOUNDARY-WHITESPACE, dimension: unicode, layer: service, oracle: documented-trim-only, automatedBy: InventoryInternationalizationTest.trimsOnlyBoundaryWhitespaceAndPreservesInternalUnicodeWhitespace}
+  - {id: UNI-INTERNAL-WHITESPACE, dimension: unicode, layer: service, oracle: exact-code-point-sequence, automatedBy: InventoryInternationalizationTest.trimsOnlyBoundaryWhitespaceAndPreservesInternalUnicodeWhitespace}
+  - {id: UNI-POSTGRES-UTF8-BYTES, dimension: unicode, layer: postgresql, oracle: exact-utf8-bytes, automatedBy: JdbcScopedEndpointRepositoryTest.roundTripsUnicodeThroughServicePostgresqlAndUtf8JsonWithoutSilentNormalization}
+  - {id: UNI-POSTGRES-NO-NORMALIZE, dimension: unicode, layer: jdbc, oracle: nfd-remains-nfd, automatedBy: JdbcScopedEndpointRepositoryTest.roundTripsUnicodeThroughServicePostgresqlAndUtf8JsonWithoutSilentNormalization}
+  - {id: UNI-JSON-UTF8-ROUNDTRIP, dimension: unicode, layer: api, oracle: exact-code-point-sequence, automatedBy: JdbcScopedEndpointRepositoryTest.roundTripsUnicodeThroughServicePostgresqlAndUtf8JsonWithoutSilentNormalization}
+  - {id: UNI-DB-ENCODING, dimension: unicode, layer: postgresql, oracle: server-and-client-utf8, automatedBy: PlatformCoreMigrationTest.usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant}
+  - {id: ID-ALL-TYPES-ROUNDTRIP, dimension: identifier, layer: domain, oracle: exact-canonical-roundtrip, automatedBy: InventoryIdTest.canonicalIdentifiersRoundTripExactlyUnderEuropeanAndTurkishLocales}
+  - {id: ID-WHITESPACE-REJECT, dimension: identifier, layer: domain, oracle: reject-not-rewrite, automatedBy: InventoryIdTest.rejectsWhitespaceCaseVariantsAndUnicodeConfusablesInsteadOfRewritingIdentifiers}
+  - {id: ID-UPPERCASE-REJECT, dimension: identifier, layer: domain, oracle: reject-not-rewrite, automatedBy: InventoryIdTest.rejectsWhitespaceCaseVariantsAndUnicodeConfusablesInsteadOfRewritingIdentifiers}
+  - {id: ID-CONFUSABLE-PREFIX-REJECT, dimension: identifier, layer: domain, oracle: reject-not-rewrite, automatedBy: InventoryIdTest.rejectsWhitespaceCaseVariantsAndUnicodeConfusablesInsteadOfRewritingIdentifiers}
+  - {id: ID-FULLWIDTH-DIGIT-REJECT, dimension: identifier, layer: domain, oracle: reject-not-rewrite, automatedBy: InventoryIdTest.rejectsWhitespaceCaseVariantsAndUnicodeConfusablesInsteadOfRewritingIdentifiers}
+  - {id: LOC-ROOT-ITALIAN-ENGLISH-TURKISH, dimension: locale, layer: service, oracle: same-output, automatedBy: InventoryInternationalizationTest.preservesUnicodeCodePointsWithoutLocaleDependentOrImplicitNormalization}
+  - {id: LOC-ID-ITALIAN-ENGLISH-FRENCH-TURKISH, dimension: locale, layer: domain, oracle: same-output, automatedBy: InventoryIdTest.canonicalIdentifiersRoundTripExactlyUnderEuropeanAndTurkishLocales}
+  - {id: LOC-ACCEPT-LANGUAGE-TURKISH, dimension: locale, layer: api, oracle: representation-unchanged, automatedBy: JdbcScopedEndpointRepositoryTest.roundTripsUnicodeThroughServicePostgresqlAndUtf8JsonWithoutSilentNormalization}
+  - {id: LOC-LIFECYCLE-ROOT-CASE, dimension: locale, layer: api, oracle: locale-root-transform, automatedBy: phase1-p1-0109-gate.locale-root-lifecycle}
+  - {id: TZ-DOMAIN-TIMESTAMPTZ, dimension: timezone, layer: postgresql, oracle: no-domain-timestamp-without-zone, automatedBy: PlatformCoreMigrationTest.usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant}
+  - {id: TZ-DST-OVERLAP, dimension: timezone, layer: jdbc, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-SESSION-UTC, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-SESSION-EUROPE-ROME, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-SESSION-EUROPE-HELSINKI, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-SESSION-AMERICA-NEW-YORK, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-IDEMPOTENCY-EXPIRY, dimension: timezone, layer: jdbc, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-AUDIT-OCCURRED-AT, dimension: timezone, layer: audit, oracle: same-instant-and-valid-chain, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+
+execution:
+  requiredCommands:
+    - ./scripts/phase1-p1-0109-gate.ps1
+    - ./mvnw -B -ntp clean verify
+  evidence:
+    - target/phase1-p1-0109-evidence/internationalization-gate-report.json
+    - platform/control-plane/target/surefire-reports
