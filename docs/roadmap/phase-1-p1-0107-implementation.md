@@ -26,7 +26,7 @@ Sono consegnati:
 9. rollback dell'operazione di business quando l'append fallisce;
 10. test su PostgreSQL 18.6 per schema, azioni, concorrenza, minimizzazione e immutabilità.
 
-Questo incremento è la fondazione audit del vertical slice inventory, non il completamento del servizio audit enterprise. WP1-10 resta responsabile di sink amministrativamente indipendente, buffering/outbox, inoltro mTLS, retention/WORM, SIEM, allarmi continui, checkpoint esterni, key rotation e audit di tutte le superfici. P1-0108 estenderà la matrice di deny e failure prima del controller. Gate G2 resta aperto fino a P1-0110.
+Questo incremento è la fondazione audit del vertical slice inventory, non il completamento del servizio audit enterprise. WP1-10 resta responsabile di sink amministrativamente indipendente, buffering/outbox, inoltro mTLS, retention/WORM, SIEM, allarmi continui, checkpoint esterni, key rotation e audit di tutte le superfici. P1-0108 ha successivamente qualificato deny e failure e P1-0110 la scansione audit della Facility calda. Gate G2 resta pending per la qualification prevista.
 
 ## 2. Eventi coperti
 
@@ -40,7 +40,7 @@ Questo incremento è la fondazione audit del vertical slice inventory, non il co
 | `ENDPOINT_UPDATE` | rename o transizione non terminale | `SUCCESS` |
 | `ENDPOINT_DECOMMISSION` | transizione terminale | `SUCCESS` |
 
-Il repository non duplica un evento read durante i controlli interni della mutation. Un retry idempotente è un accesso amministrativo reale e produce un nuovo evento, pur non creando una seconda risorsa. Invalid input, token assente/non valido, capability deny e collision/stale failure avvengono oggi prima dell'append committabile o causano rollback; la relativa security decision deve essere catturata dal boundary di sicurezza/outbox in P1-0108 e WP1-10. Non si dichiara quindi una completezza audit generale inesistente.
+Il repository non duplica un evento read durante i controlli interni della mutation. Un retry idempotente è un accesso amministrativo reale e produce un nuovo evento, pur non creando una seconda risorsa. Invalid input, token assente/non valido, capability deny e collision/stale failure avvengono oggi prima dell'append committabile o causano rollback. P1-0108 ne verifica l'esito fail-closed; la relativa security decision deve essere catturata dal boundary di sicurezza/outbox in WP1-10. Non si dichiara quindi una completezza audit generale inesistente.
 
 ## 3. Modello persistente
 
@@ -119,7 +119,7 @@ La sequenza è per Facility, quindi:
 - l'ordine è totale nello scope amministrativo e non globale;
 - il costo di append cresce con la contesa della singola Facility, non con il numero totale di tenant.
 
-Prima della produzione sono ancora necessari benchmark con seed P1-0110, retention/partitioning, vacuum sizing e capacity model. Il full scan del verifier è una funzione controllata/offline: non va invocato sul request path. WP1-10 introdurrà checkpoint/batch verification per tempi bounded su retention pluriennale.
+P1-0110 ha consegnato seed e regression locale su 60 eventi di list, non un benchmark di retention. Prima della produzione restano necessari retention/partitioning, vacuum sizing, capacity model e corpus audit pluriennale. Il full scan del verifier è una funzione controllata/offline: non va invocato sul request path. WP1-10 introdurrà checkpoint/batch verification per tempi bounded.
 
 ## 8. Privacy, GDPR ed EHDS 2026
 
@@ -186,13 +186,13 @@ L'inventory abilitato senza uno di questi valori fallisce lo startup. Le chiavi 
 
 | Tema | Stato P1-0107 | Chiusura |
 |---|---|---|
-| deny OIDC/RBAC e invalid request | non ancora nel journal transazionale | P1-0108 e WP1-10 |
+| deny OIDC/RBAC e invalid request | esito qualificato da P1-0108; non ancora nel journal transazionale | WP1-10 |
 | audit secret bind/rotate/revoke | modello pronto, operazioni HTTP non esposte | secret management increment/WP1-10 |
 | sink indipendente e SIEM | non consegnati | WP1-10/M4 |
 | checkpoint esterno/WORM | non consegnato | WP1-10/M4 |
 | key rotation multi-key | singola chiave attiva | WP1-10 |
 | partitioning/retention purge governato | schema iniziale non partizionato | WP1-10/capacity qualification |
-| performance hot Facility | isolamento progettato, benchmark pendente | P1-0110/G2 |
+| performance hot Facility | keyset e catena su 6.000 Endpoint consegnate da P1-0110; capacity production non qualificata | WP1-12/G8 |
 | restore/failover reale | atomicità testata, drill pendente | WP1-11/M5 |
 
 ## 13. Fonti ufficiali e data di verifica

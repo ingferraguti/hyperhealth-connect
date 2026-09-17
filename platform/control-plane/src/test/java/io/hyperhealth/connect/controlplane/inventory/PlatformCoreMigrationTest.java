@@ -115,6 +115,36 @@ class PlatformCoreMigrationTest {
     }
 
     @Test
+    void usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant() throws SQLException {
+        flyway(null).migrate();
+
+        assertThat(queryStrings("SHOW server_encoding")).containsExactly("UTF8");
+        assertThat(queryStrings("SHOW client_encoding")).containsExactly("UTF8");
+        assertThat(queryLong("""
+                SELECT count(*)
+                 FROM information_schema.columns
+                 WHERE table_schema = 'platform_core'
+                   AND table_name <> 'flyway_schema_history'
+                   AND data_type = 'timestamp without time zone'
+                """))
+                .isZero();
+        assertThat(queryLong("""
+                SELECT count(*)
+                  FROM information_schema.columns
+                 WHERE table_schema = 'platform_core'
+                   AND column_name IN (
+                       'allocated_at', 'created_at', 'updated_at', 'decommissioned_at',
+                       'revoked_at', 'expires_at', 'occurred_at', 'recorded_at', 'retired_at')
+                   AND data_type = 'timestamp with time zone'
+                """))
+                .isGreaterThanOrEqualTo(20);
+        assertThat(queryLong("SELECT char_length('😀')")).isEqualTo(1L);
+        assertThat(queryLong("SELECT octet_length('😀')")).isEqualTo(4L);
+        assertThat(queryLong("SELECT char_length(U&'Cafe\\0301')")).isEqualTo(5L);
+        assertThat(queryLong("SELECT octet_length(U&'Cafe\\0301')")).isEqualTo(6L);
+    }
+
+    @Test
     void upgradesAnNMinusOneSchemaWithoutLosingExistingInventory() throws SQLException {
         assertThat(flyway("1").migrate().migrationsExecuted).isEqualTo(1);
         UUID tenantId = UUID.randomUUID();
@@ -165,6 +195,61 @@ class PlatformCoreMigrationTest {
         assertSqlState("23000", () -> execute(
                 "DELETE FROM platform_core.tenant WHERE tenant_id = ?",
                 tenantA));
+    }
+
+    @Test
+    void constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry() throws SQLException {
+        flyway(null).migrate();
+        UUID tenantA = createTenant("Synthetic Matrix Tenant A");
+        UUID tenantB = createTenant("Synthetic Matrix Tenant B");
+        UUID organizationA = createOrganization(tenantA, "Synthetic Matrix Organization A");
+        UUID organizationB = createOrganization(tenantA, "Synthetic Matrix Organization B");
+        UUID facilityA = createFacility(tenantA, organizationA, "Synthetic Matrix Facility A");
+        UUID facilityB = createFacility(tenantA, organizationB, "Synthetic Matrix Facility B");
+        UUID applicationA = createApplication(
+                tenantA, organizationA, facilityA, "Synthetic Matrix Application A");
+
+        UUID incoherentApplication = UUID.randomUUID();
+        allocate(incoherentApplication, "APPLICATION");
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.application
+                    (application_id, tenant_id, organization_id, facility_id, display_name)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                incoherentApplication,
+                tenantA,
+                organizationA,
+                facilityB,
+                "Cross-facility Application"));
+
+        UUID incoherentEndpoint = UUID.randomUUID();
+        allocate(incoherentEndpoint, "ENDPOINT");
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.endpoint
+                    (endpoint_id, tenant_id, organization_id, facility_id, application_id, display_name)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                incoherentEndpoint,
+                tenantA,
+                organizationB,
+                facilityB,
+                applicationA,
+                "Cross-facility Endpoint"));
+
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.inventory_audit_chain_head
+                    (tenant_id, facility_id, last_sequence, last_record_hash)
+                VALUES (?, ?, 0, ?)
+                """, tenantB, facilityA, new byte[32]));
+
+        assertThat(queryLong("SELECT count(*) FROM platform_core.application WHERE application_id = '"
+                        + incoherentApplication + "'::uuid"))
+                .isZero();
+        assertThat(queryLong("SELECT count(*) FROM platform_core.endpoint WHERE endpoint_id = '"
+                        + incoherentEndpoint + "'::uuid"))
+                .isZero();
+        assertThat(queryLong("SELECT count(*) FROM platform_core.inventory_audit_chain_head"))
+                .isZero();
     }
 
     @Test

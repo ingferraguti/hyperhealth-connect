@@ -1,0 +1,91 @@
+schemaVersion: 1
+activity: P1-0108
+baselineDate: 2026-09-16
+status: implemented
+dataPolicy: synthetic-only
+scopeModel: verified-tenant-and-facility
+resourceSurface: endpoint-and-secret-reference
+qualificationBoundary:
+  included:
+    - signed-scope-propagation
+    - oidc-and-rbac-denial
+    - api-controller-service-repository-sql-isolation
+    - endpoint-read-list-create-update
+    - secret-reference-find-export-register-bind
+    - audit-scope-and-non-enumeration
+  excluded:
+    - administrative-api-for-tenant-organization-facility-application-runtime-cell
+    - provider-secret-resolution
+    - independent-security-decision-sink
+    - database-row-level-security
+    - distributed-cache
+  exclusionRationale: >-
+    P1-0108 qualifies the implemented facility-scoped Endpoint vertical slice. The excluded
+    surfaces do not exist in this increment and cannot truthfully be certified by a test.
+
+invariants:
+  - id: ISO-01
+    statement: Every public repository, service and Endpoint API operation receives VerifiedFacilityScope first.
+  - id: ISO-02
+    statement: Scope comes only from a validated signed identity; client scope headers are never authoritative.
+  - id: ISO-03
+    statement: Every Endpoint SQL predicate includes tenant_id and facility_id before the resource identifier.
+  - id: ISO-04
+    statement: A foreign object and an absent object have the same non-enumerable API outcome.
+  - id: ISO-05
+    statement: A denied mutation commits no endpoint, identity, idempotency claim, binding or target-scope audit row.
+  - id: ISO-06
+    statement: Audit of a scoped read denial is written only to the requester scope and stores no raw target identifier.
+  - id: ISO-07
+    statement: No inventory cache exists; introducing one fails the gate until its key contains tenant and facility and its negative matrix is added.
+
+cases:
+  - {id: BND-REPOSITORY-SCOPE-FIRST, layer: repository, target: both, operation: scope-contract, oracle: denied-before-persistence, automatedBy: ScopedInventoryServiceTest.keepsScopeAsTheFirstParameterOfEveryRepositoryOperation}
+  - {id: BND-SERVICE-SCOPE-FIRST, layer: service, target: both, operation: scope-contract, oracle: denied-before-persistence, automatedBy: ScopedInventoryServiceTest.keepsScopeAsTheFirstParameterOfEveryPublicServiceAndApiOperation}
+  - {id: BND-API-SCOPE-FIRST, layer: api, target: both, operation: scope-contract, oracle: denied-before-persistence, automatedBy: ScopedInventoryServiceTest.keepsScopeAsTheFirstParameterOfEveryPublicServiceAndApiOperation}
+  - {id: AUTH-SIGNED-SCOPE-OVERRIDES-HEADERS, layer: security, target: both, operation: scope-propagation, oracle: signed-scope-wins, automatedBy: OidcSecurityWebIntegrationTest.humanTokenCreatesScopeAndOverwritesSpoofedHeadersAndRequestAttributes}
+  - {id: AUTH-CONFUSED-DEPUTY, layer: api, target: both, operation: scope-propagation, oracle: denied-before-persistence, automatedBy: ScopedEndpointControllerTest.rejectsAConfusedDeputyScopeBeforePersistence}
+  - {id: AUTH-MISSING-OR-BAD-TOKEN, layer: security, target: both, operation: authentication, oracle: safe-401, automatedBy: OidcSecurityWebIntegrationTest.missingMalformedAndCryptographicallyInvalidTokensFailWithSafe401}
+  - {id: AUTH-AUDIENCE-ROLE-CONFUSION, layer: security, target: both, operation: authentication, oracle: safe-401, automatedBy: OidcSecurityWebIntegrationTest.wrongAudienceExpiredTokenAndHumanWorkloadRoleConfusionFailWith401}
+  - {id: AUTH-READ-CAPABILITY, layer: security, target: both, operation: rbac, oracle: safe-403, automatedBy: OidcSecurityWebIntegrationTest.authenticatedRoleWithoutInventoryCapabilityFailsWith403}
+  - {id: AUTH-WRITE-CAPABILITY, layer: security, target: both, operation: rbac, oracle: safe-403, automatedBy: OidcSecurityWebIntegrationTest.onlyFacilityOperatorReceivesTheInventoryWriteCapability}
+  - {id: REPO-READ-SIBLING, layer: repository, target: sibling-facility, operation: read, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: REPO-READ-TENANT, layer: repository, target: other-tenant, operation: read, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-READ-SIBLING, layer: service, target: sibling-facility, operation: read, oracle: indistinguishable-not-found, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-READ-TENANT, layer: service, target: other-tenant, operation: read, oracle: indistinguishable-not-found, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: REPO-LIST-SIBLING-FILTER, layer: repository, target: sibling-facility, operation: list, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: REPO-LIST-TENANT-FILTER, layer: repository, target: other-tenant, operation: list, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-CREATE-SIBLING-APPLICATION, layer: service, target: sibling-facility, operation: create, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-CREATE-TENANT-APPLICATION, layer: service, target: other-tenant, operation: create, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-UPDATE-SIBLING-ENDPOINT, layer: service, target: sibling-facility, operation: update, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SERVICE-UPDATE-TENANT-ENDPOINT, layer: service, target: other-tenant, operation: update, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-READ-SIBLING, layer: api, target: sibling-facility, operation: read, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-READ-TENANT, layer: api, target: other-tenant, operation: read, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-LIST-SIBLING-FILTER, layer: api, target: sibling-facility, operation: list, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-LIST-TENANT-FILTER, layer: api, target: other-tenant, operation: list, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-CREATE-SIBLING-APPLICATION, layer: api, target: sibling-facility, operation: create, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-CREATE-TENANT-APPLICATION, layer: api, target: other-tenant, operation: create, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-UPDATE-SIBLING-ENDPOINT, layer: api, target: sibling-facility, operation: update, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: API-UPDATE-TENANT-ENDPOINT, layer: api, target: other-tenant, operation: update, oracle: indistinguishable-404, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: SECRET-FIND-SIBLING, layer: secret-repository, target: sibling-facility, operation: secret-find, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-FIND-TENANT, layer: secret-repository, target: other-tenant, operation: secret-find, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-EXPORT-SIBLING, layer: secret-repository, target: sibling-facility, operation: secret-export, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-EXPORT-TENANT, layer: secret-repository, target: other-tenant, operation: secret-export, oracle: empty-result, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-BIND-FOREIGN-ENDPOINT, layer: secret-repository, target: both, operation: secret-bind, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-BIND-FOREIGN-SCOPE, layer: secret-repository, target: both, operation: secret-bind, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: SECRET-REGISTER-SCOPE-MISMATCH, layer: secret-repository, target: sibling-facility, operation: secret-register, oracle: denied-before-persistence, automatedBy: JdbcScopedEndpointRepositoryTest.persistsOnlyOpaqueSecretBindingsAndExportsOnlyPortableMetadata}
+  - {id: DB-FACILITY-ORGANIZATION-ANCESTRY, layer: database, target: sibling-facility, operation: ancestry, oracle: db-constraint, automatedBy: PlatformCoreMigrationTest.constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry}
+  - {id: DB-APPLICATION-FACILITY-ANCESTRY, layer: database, target: sibling-facility, operation: ancestry, oracle: db-constraint, automatedBy: PlatformCoreMigrationTest.constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry}
+  - {id: DB-ENDPOINT-APPLICATION-ANCESTRY, layer: database, target: sibling-facility, operation: ancestry, oracle: db-constraint, automatedBy: PlatformCoreMigrationTest.constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry}
+  - {id: DB-CROSS-TENANT-ANCESTRY, layer: database, target: other-tenant, operation: ancestry, oracle: db-constraint, automatedBy: PlatformCoreMigrationTest.constraintsRejectCrossTenantAncestryWrongTypesAndIdentityMutation}
+  - {id: DB-AUDIT-SCOPE-ANCESTRY, layer: database, target: other-tenant, operation: audit, oracle: db-constraint, automatedBy: PlatformCoreMigrationTest.constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry}
+  - {id: AUDIT-READ-DENY-SIBLING, layer: audit, target: sibling-facility, operation: audit, oracle: requester-scope-audit, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: AUDIT-READ-DENY-TENANT, layer: audit, target: other-tenant, operation: audit, oracle: requester-scope-audit, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+  - {id: AUDIT-NO-RAW-TARGET-ID, layer: audit, target: both, operation: audit, oracle: no-sensitive-payload, automatedBy: JdbcScopedEndpointRepositoryTest.recordsAnImmutablePseudonymousAndVerifiableInventoryAuditChain}
+  - {id: AUDIT-NO-TARGET-SCOPE-SIDE-EFFECT, layer: audit, target: both, operation: audit, oracle: no-side-effect, automatedBy: JdbcScopedEndpointRepositoryTest.deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration}
+
+execution:
+  pullRequestGate: scripts/phase1-p1-0108-gate.ps1
+  testCommand: ./mvnw -B -ntp -pl platform/control-plane -am test
+  evidencePath: target/phase1-p1-0108-evidence/tenant-isolation-gate-report.json
+  requiredOutcome: PASS

@@ -4,7 +4,7 @@
 |---|---|
 | Stato | Indice normativo 1.0 |
 | Target | HHC enterprise multi-azienda, multi-facility e multi-site |
-| Ultimo aggiornamento | 4 settembre 2026 |
+| Ultimo aggiornamento | 17 settembre 2026 |
 | Owner | Quality Engineering |
 
 ## 1. Scopo della sezione
@@ -20,6 +20,9 @@ I documenti coprono sia il prodotto enterprise finale sia l'MVP. L'MVP usa gli s
 3. [Toolchain e ambienti](./test-toolchain-and-environments.md): strumenti, BOM, runner, ambienti e pipeline.
 4. [Conformità e interoperabilità](./conformance-and-interoperability.md): HL7 v2, FHIR, CDA/IHE, DICOM, terminologie e OMOP.
 5. [Performance, resilienza e chaos](./performance-and-chaos.md): capacity, SLO, fault injection, HA, BC/DR e game day.
+6. [Matrice di isolamento P1-0108](./phase-1-tenant-isolation-matrix.yml): casi negativi cross-tenant/cross-facility e relativo oracle automatizzato.
+7. [Matrice Unicode, locale, timezone e ID P1-0109](./phase-1-internationalization-matrix.yml): round-trip UTF-8, ID canonici e istanti invarianti tra timezone.
+8. [Manifest scala inventory P1-0110](./phase-1-inventory-scale-manifest.yml): seed deterministico, hot scope, keyset, audit, piani query e confine dei claim.
 
 ## 3. Autorità dei documenti
 
@@ -59,6 +62,9 @@ Un test verde non modifica un requisito. Se la documentazione e l'implementazion
 | HA/BC/DR | performance-and-chaos | fault timeline, RTO/RPO, reconciliation e runbook |
 | Sicurezza | test-strategy più policy agentic | ASVS/control matrix, findings e retest |
 | Audit/monitoring | test-strategy e performance-and-chaos | correlation, gap/tamper e alert evidence |
+| Tenant isolation | phase-1-tenant-isolation-matrix | report gate JSON e test PostgreSQL/OIDC/API |
+| Unicode, locale, timezone e ID | phase-1-internationalization-matrix | report gate JSON e test service/PostgreSQL/JDBC/API/audit |
+| Scala inventory WP1-01 | phase-1-inventory-scale-manifest | digest seed, Surefire, piani indicizzati e report runtime/gate JSON |
 
 ## 6. Gate MVP e prodotto finale
 
@@ -107,4 +113,3 @@ Una modifica è `DONE` soltanto quando:
 ## 8. Stato delle fonti
 
 Ogni documento riporta le proprie fonti ufficiali e la data di verifica. Prima di una release candidate vengono ricontrollati standard, package, tool, support matrix e normativa applicabile. “Consultato” indica la data della verifica documentale, non una garanzia che una pagina rimanga immutata né una certificazione di conformità.
-

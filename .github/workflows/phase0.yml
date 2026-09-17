@@ -11,6 +11,58 @@ permissions:
   contents: read
 
 jobs:
+  inventory-scale-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '21.0.11+10.0.LTS'
+          cache: maven
+      - name: Execute P1-0110 deterministic inventory scale qualification
+        run: ./mvnw -B -ntp -pl platform/control-plane -am -Dtest=InventoryScaleQualificationTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - name: Validate P1-0110 seed, query plans and runtime evidence
+        shell: pwsh
+        run: ./scripts/phase1-p1-0110-gate.ps1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p1-0110-inventory-scale-evidence
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            platform/control-plane/target/phase1-p1-0110-evidence/inventory-scale-test-report.json
+            platform/control-plane/target/surefire-reports/TEST-io.hyperhealth.connect.controlplane.inventory.InventoryScaleQualificationTest.xml
+            target/phase1-p1-0110-evidence/inventory-scale-gate-report.json
+
+  internationalization-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate P1-0109 Unicode, locale, timezone and identifier matrix
+        shell: pwsh
+        run: ./scripts/phase1-p1-0109-gate.ps1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p1-0109-internationalization-evidence
+          if-no-files-found: error
+          retention-days: 14
+          path: target/phase1-p1-0109-evidence/internationalization-gate-report.json
+
+  tenant-isolation-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate P1-0108 cross-tenant and cross-facility matrix
+        shell: pwsh
+        run: ./scripts/phase1-p1-0108-gate.ps1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p1-0108-tenant-isolation-evidence
+          if-no-files-found: error
+          retention-days: 14
+          path: target/phase1-p1-0108-evidence/tenant-isolation-gate-report.json
+
   platform-db-schema-gate:
     runs-on: ubuntu-latest
     steps:

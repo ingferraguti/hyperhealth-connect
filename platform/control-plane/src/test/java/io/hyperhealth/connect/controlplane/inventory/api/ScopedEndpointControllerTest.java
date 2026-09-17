@@ -89,6 +89,29 @@ class ScopedEndpointControllerTest {
     }
 
     @Test
+    void rejectsAConfusedDeputyScopeBeforePersistence() throws Exception {
+        VerifiedFacilityScope foreignRequestScope = new VerifiedFacilityScope(
+                new TenantId(UUID.randomUUID()), new FacilityId(UUID.randomUUID()));
+
+        mockMvc.perform(get("/api/v1/endpoints/{endpointId}", endpointId.externalForm())
+                        .principal(authentication)
+                        .requestAttr(
+                                VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE,
+                                foreignRequestScope)
+                        .header("X-Tenant-ID", tenantId.externalForm())
+                        .header("X-Facility-ID", facilityId.externalForm()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("HHC-INV-401-001"))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(endpointId.externalForm()))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(foreignRequestScope.tenantId().externalForm()))));
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
     void returnsAResourceOnlyThroughTheVerifiedScope() throws Exception {
         ScopedEndpoint endpoint = new ScopedEndpoint(
                 endpointId,

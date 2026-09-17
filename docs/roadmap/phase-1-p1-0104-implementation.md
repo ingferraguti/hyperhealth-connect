@@ -24,7 +24,7 @@ P1-0104 introduce il trust boundary che mancava al percorso scoped realizzato da
 8. risponde con Problem Details uniforme e privo di token, claim, chiavi, SQL o dati di risorse negate;
 9. resta deny-by-default se OIDC non è abilitato o se la configurazione di trust è incompleta.
 
-L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md), la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md) e il journal Endpoint da [P1-0107](phase-1-p1-0107-implementation.md); la matrice negativa estesa resta P1-0108.
+L'incremento non rendeva concluso WP1-01 né Gate G2. Le secret reference scoped sono state successivamente consegnate da [P1-0105](phase-1-p1-0105-implementation.md), la API Endpoint modificabile da [P1-0106](phase-1-p1-0106-implementation.md), il journal Endpoint da [P1-0107](phase-1-p1-0107-implementation.md) e la matrice negativa estesa da [P1-0108](phase-1-p1-0108-implementation.md).
 
 ## 2. Trust boundary e flusso della richiesta
 
@@ -193,7 +193,7 @@ La rimozione anticipata può causare outage; una sovrapposizione indefinita prol
 | header/request attribute di scope spoofato | ignorato e sovrascritto | HTTP integration |
 | OIDC disabilitato | API deny-all | application context + HTTP |
 
-I test usano identità, chiavi e ID sintetici generati a runtime. Non contattano un IdP pubblico e non contengono credenziali persistenti. La suite con Keycloak di riferimento, revoca, rollover JWKS remoto, outage, multi-replica e matrice cross-layer completa rimane un deliverable di qualification P1-0108/G2.
+I test usano identità, chiavi e ID sintetici generati a runtime. Non contattano un IdP pubblico e non contengono credenziali persistenti. P1-0108 ha consegnato la matrice cross-layer sul validator sintetico; Keycloak di riferimento, revoca, rollover JWKS remoto, outage e multi-replica rimangono deliverable di qualification IAM/G2.
 
 ## 9. Casi d'uso sanitari europei 2026
 
@@ -243,8 +243,8 @@ Test:
 |---|---|---|
 | secret/private key workload | reference scoped/binding opaco consegnati da P1-0105; valore e provisioning provider restano esterni | runtime/deployment qualification |
 | inventory Endpoint CRUD e grant | successivamente consegnati | P1-0106 |
-| audit append-only Endpoint | consegnato da P1-0107; deny pre-controller esclusi | P1-0108/WP1-10 |
-| matrix completa ogni endpoint/layer | subset OIDC critico consegnato | P1-0108 / G2 |
+| audit append-only Endpoint | consegnato da P1-0107; deny pre-controller qualificati da P1-0108 ma non journalizzati | WP1-10 |
+| matrix completa ogni endpoint/layer implementato | consegnata da P1-0108 | mantenimento continuo / G2 |
 | revoca near-real-time | dipende dal profilo IdP e TTL | Identity & Access / G2 |
 | sender constraint mTLS/DPoP | richiesto secondo rischio, non simulato | Security Architecture / qualification |
 | IdP/JWKS HA e DR | contratto e failure mode definiti, topologia da qualificare | SRE / G2, M5 |

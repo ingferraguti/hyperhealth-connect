@@ -1,6 +1,6 @@
 schemaVersion: 1
 baseline: phase-1-WP1-00
-reviewedAt: 2026-09-15
+reviewedAt: 2026-09-17
 items:
   - requirement: NFR-SEC-001
     decisions: [ADR-008, ADR-009]
@@ -53,6 +53,8 @@ items:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/RuntimeCellTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryInternationalizationTest.java
+      - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryScaleQualificationTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/ScopedInventoryServiceTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/api/ScopedEndpointControllerTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcSecurityPropertiesTest.java
@@ -60,15 +62,26 @@ items:
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcJwtDecoderTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcSecurityWebIntegrationTest.java
       - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/security/OidcDisabledSecurityWebIntegrationTest.java
-      - planned/R0.2/G2/tenant-isolation-matrix
+      - docs/testing/phase-1-tenant-isolation-matrix.yml
+      - docs/testing/phase-1-internationalization-matrix.yml
+      - docs/testing/phase-1-inventory-scale-manifest.yml
       - delivered/P1-0104/oidc-core-negative-matrix
       - planned/R0.2/G2/oidc-remote-rotation-revocation-outage-matrix
-    deliveredEvidence: governance/platform-db-schema.yml
-    implementationRecord: docs/roadmap/phase-1-p1-0105-implementation.md
+    deliveredEvidence:
+      - governance/platform-db-schema.yml
+      - target/phase1-p1-0108-evidence/tenant-isolation-gate-report.json
+      - target/phase1-p1-0109-evidence/internationalization-gate-report.json
+      - target/phase1-p1-0110-evidence/inventory-scale-gate-report.json
+      - platform/control-plane/target/phase1-p1-0110-evidence/inventory-scale-test-report.json
+    implementationRecord: docs/roadmap/phase-1-p1-0110-implementation.md
     implementationHistory:
       - docs/roadmap/phase-1-p1-0103-implementation.md
       - docs/roadmap/phase-1-p1-0104-implementation.md
       - docs/roadmap/phase-1-p1-0105-implementation.md
+      - docs/roadmap/phase-1-p1-0106-implementation.md
+      - docs/roadmap/phase-1-p1-0107-implementation.md
+      - docs/roadmap/phase-1-p1-0108-implementation.md
+      - docs/roadmap/phase-1-p1-0109-implementation.md
     evidence: evidence/R0.2/G2
     owner: platform-engineering
   - requirement: NFR-SEC-003

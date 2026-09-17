@@ -115,13 +115,31 @@ public final class ScopedInventoryService {
             throw new InvalidInventoryRequestException("displayName is required");
         }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.codePointCount(0, normalized.length()) > 256) {
+        if (normalized.isEmpty()) {
+            throw new InvalidInventoryRequestException("displayName must contain between 1 and 256 characters");
+        }
+        requireWellFormedUnicode(normalized);
+        if (normalized.codePointCount(0, normalized.length()) > 256) {
             throw new InvalidInventoryRequestException("displayName must contain between 1 and 256 characters");
         }
         if (normalized.codePoints().anyMatch(Character::isISOControl)) {
             throw new InvalidInventoryRequestException("displayName contains a disallowed control character");
         }
         return normalized;
+    }
+
+    private static void requireWellFormedUnicode(String value) {
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if (Character.isHighSurrogate(current)) {
+                if (index + 1 >= value.length() || !Character.isLowSurrogate(value.charAt(index + 1))) {
+                    throw new InvalidInventoryRequestException("displayName contains malformed Unicode");
+                }
+                index++;
+            } else if (Character.isLowSurrogate(current)) {
+                throw new InvalidInventoryRequestException("displayName contains malformed Unicode");
+            }
+        }
     }
 
     private static byte[] requestDigest(ApplicationId applicationId, String displayName) {
