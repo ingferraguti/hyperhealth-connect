@@ -145,7 +145,7 @@ Tutti i fixture sono marcati `HHC-SYNTHETIC`. Il test PostgreSQL usa la stessa i
 - timeout e failure di connessione non attivano fallback unscoped o cache globale;
 - il correlation ID consente di collegare errore API e futura telemetria senza includere PHI;
 - P1-0103 non includeva audit; P1-0107 ha poi consegnato gli accessi Endpoint e P1-0108 ha qualificato i deny pre-controller, la cui registrazione indipendente resta WP1-10;
-- benchmark, noisy-neighbor e piano `EXPLAIN` sul seed multi-tenant restano parte di P1-0110/G2.
+- seed multi-tenant e piano `EXPLAIN` sono stati consegnati da P1-0110; noisy-neighbour e capacity production restano WP1-12/G8.
 
 ## Confini deliberati
 
@@ -156,9 +156,9 @@ Non sono inclusi:
 - create/update/decommission, collection, pagination, ETag e idempotenza, successivamente consegnati da P1-0106;
 - audit journal Endpoint, successivamente consegnato da P1-0107;
 - matrice negativa per i layer del vertical slice, consegnata da P1-0108; RLS defense-in-depth resta un hardening separato non ancora implementato;
-- seed e benchmark su scala, previsti da P1-0110.
+- seed, keyset e piani su scala, consegnati da P1-0110; il benchmark production resta separato.
 
-P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference, P1-0106 le collection/mutazioni Endpoint, P1-0107 il relativo journal, P1-0108 la matrice negativa e P1-0109 la qualification Unicode/locale/timezone. G2 rimane aperto per P1-0110 e la qualification prevista.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto le secret reference, P1-0106 le mutation, P1-0107 il journal, P1-0108 la matrice negativa, P1-0109 la qualification internazionale e P1-0110 il seed di scala. Tutte le attività WP1-01 sono implementate; G2 rimane pending per CI/evidence e qualification prevista.
 
 ## Fonti ufficiali
 

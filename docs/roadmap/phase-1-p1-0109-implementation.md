@@ -21,7 +21,7 @@ P1-0109 qualifica l'internazionalizzazione del vertical slice consegnato da P1-0
 7. l'overlap DST europeo non altera lifecycle, scadenza idempotency o audit chain;
 8. il comportamento non cambia con locale JVM italiana, inglese, francese o turca né con `Accept-Language`.
 
-La modifica di produzione è deliberatamente piccola: il service verifica esplicitamente che `displayName` sia Unicode ben formato. Il resto del contratto era strutturalmente corretto ed è ora protetto da test e gate anti-regressione. P1-0109 non chiude WP1-01 o Gate G2: rimangono P1-0110, seed di scala, benchmark e qualification del gate.
+La modifica di produzione è deliberatamente piccola: il service verifica esplicitamente che `displayName` sia Unicode ben formato. Il resto del contratto era strutturalmente corretto ed è ora protetto da test e gate anti-regressione. P1-0110 ha successivamente consegnato il seed di scala; Gate G2 resta pending per CI/evidence e qualification indipendente.
 
 ## 2. Perimetro e affermazioni ammesse
 
@@ -156,7 +156,7 @@ Per installazioni multiazienda e multifacility:
 - un failover non richiede ricostruzione locale di timestamp;
 - il gate viene eseguito dopo upgrade JDK, PostgreSQL, driver JDBC o modifica di serializzazione.
 
-P1-0109 non è un benchmark. Throughput, p95/p99, hot tenant e seed ≥10.000 Endpoint appartengono a P1-0110. L'assenza di regressioni funzionali non sostituisce capacity test, soak test o failover test.
+P1-0109 non è un benchmark. P1-0110 ha successivamente consegnato seed ≥10.000 Endpoint, hot Facility, piani e p95 developer non qualificante. Capacity test, p99 sotto carico, soak e failover restano WP1-11/WP1-12.
 
 ## 9. Business continuity e disaster recovery
 
@@ -246,7 +246,7 @@ Il workflow CI pubblica `target/phase1-p1-0109-evidence/internationalization-gat
 
 | Tema | Stato dopo P1-0109 | Chiusura |
 |---|---|---|
-| seed e benchmark multi-tenant/multi-facility | non incluso | P1-0110 |
+| seed e query regression multi-tenant/multi-facility | consegnati successivamente, senza claim production | [P1-0110](phase-1-p1-0110-implementation.md) |
 | ricerca/ordinamento localizzato | non implementato | work item API/search dedicato |
 | identificativi e timestamp clinici originali | non nel vertical slice | WP1-02 e semantic/mapping |
 | timezone/offset sorgente di eventi business | modello futuro separato | canonical model |

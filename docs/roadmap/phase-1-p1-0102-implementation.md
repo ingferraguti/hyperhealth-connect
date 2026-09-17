@@ -198,7 +198,7 @@ La presenza di `IF NOT EXISTS` sugli indici limita gli errori di retry, ma non s
 | scope shape/duplicate | shape incoerente, duplicato attivo e revoca dell'ultimo scope rifiutati |
 | secret reference P1-0105 | catalogo a colonne allowlisted, enum/UUID/ancestry validati, binding immutabile, hard delete rifiutato |
 
-Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. P1-0108 ha successivamente consegnato la matrice negativa e P1-0109 la qualification Unicode/locale/timezone; la qualification completa G2 resta aperta per P1-0110 e le prove di gate residue.
+Il test è incluso nel normale `mvn clean verify`, quindi il required check di build intercetta drift SQL, incompatibilità con PostgreSQL e regressioni dei constraint. P1-0108 ha successivamente consegnato la matrice negativa, P1-0109 la qualification Unicode/locale/timezone e P1-0110 il seed dimensionale con piani query; la qualification completa G2 resta aperta per CI, evidence e review residue.
 
 ## Configurazione operativa minima
 
@@ -237,7 +237,7 @@ La compatibilità dichiarata di questo incremento è PostgreSQL 18.x. Distribuzi
 | abuso di un ruolo DB privilegiato | constraint e trigger | separation of duties/grant nella deployment baseline |
 | modifica lifecycle Endpoint | timestamp, stato ed evento tamper-evident | consegnata da P1-0107; altre risorse in WP1-10 |
 | accesso cross-scope autorizzato male | ancestry fisica coerente | OIDC/RBAC core P1-0104; matrice estesa P1-0108 consegnata |
-| indice corretto ma piano inefficiente su scala | struttura left-prefix | benchmark e `EXPLAIN (ANALYZE, BUFFERS)` sul corpus P1-0110/G2 |
+| indice corretto ma piano inefficiente su scala | struttura left-prefix | `EXPLAIN (ANALYZE, BUFFERS)` consegnato sul corpus P1-0110; capacity production in WP1-12/G8 |
 | errore durante migration non transazionale | catalog validation e forward-only | runbook operativo e qualification failure/resume M5 |
 | perdita del writer o restore incompleto | schema ricreabile e checksum Flyway | HA/backup/PITR/restore qualification WP1-11 |
 

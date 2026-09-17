@@ -346,7 +346,7 @@ Governance:
 | rotazione automatica end-to-end | overlap DB provato, provider/consumer non ancora | WP1-11/G8 |
 | cache, thundering herd e quota | requisiti definiti, benchmark non incluso | WP1-12/G8 |
 | HA/DR secret manager | contratto definito, topologia non qualificata | WP1-11/M5 |
-| performance su corpus multi-facility | indici presenti, envelope non misurato | P1-0110/G2 |
+| performance su corpus multi-facility | seed/piani inventory consegnati da P1-0110; resolver/envelope e capacity production non misurati | runtime qualification/WP1-12 |
 
 G2 richiede inoltre grant DB minimi, piani query su scala, backup/restore logico, test reali di provider almeno sul profilo dichiarato, leakage scan e chiusura dei finding. Nessun provider è dichiarato production-ready per il solo fatto di essere presente nell'enum.
 

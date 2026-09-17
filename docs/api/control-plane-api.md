@@ -211,7 +211,7 @@ La collection usa keyset pagination ordinata per Endpoint ID, limite 1–100 e f
 
 `PATCH` usa `application/merge-patch+json`, accetta soltanto display name e lifecycle e richiede un ETag forte `If-Match: "rv-N"`. L'assenza produce 428, una versione stale 412. Decommission è terminale e non cancella identity o history. Solo `FacilityOperator` riceve `HHC_INVENTORY_WRITE`; Auditor e RuntimeAgent restano read-only.
 
-Le API dei livelli superiori non sono pubblicate sotto un token limitato alla Facility. P1-0107 ha aggiunto l'audit append-only, P1-0108 la matrice negativa completa e P1-0109 la qualification Unicode/locale/timezone/ID; seed e benchmark restano P1-0110. Contratto e failure matrix sono in [P1-0106](../roadmap/phase-1-p1-0106-implementation.md); le evidence sono in [P1-0108](../roadmap/phase-1-p1-0108-implementation.md) e [P1-0109](../roadmap/phase-1-p1-0109-implementation.md).
+Le API dei livelli superiori non sono pubblicate sotto un token limitato alla Facility. P1-0107 ha aggiunto l'audit append-only, P1-0108 la matrice negativa, P1-0109 la qualification internazionale e P1-0110 il seed da 12.000 Endpoint con keyset e piani indicizzati. Contratto e failure matrix sono in [P1-0106](../roadmap/phase-1-p1-0106-implementation.md); le evidence sono in [P1-0108](../roadmap/phase-1-p1-0108-implementation.md), [P1-0109](../roadmap/phase-1-p1-0109-implementation.md) e [P1-0110](../roadmap/phase-1-p1-0110-implementation.md). Il timing developer P1-0110 non costituisce un claim di capacità production.
 
 ### 7.7 Incremento P1-0107 — correlazione e audit inventory
 

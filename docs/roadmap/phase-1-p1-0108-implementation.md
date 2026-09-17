@@ -26,7 +26,7 @@ Sono consegnati:
 
 Il perimetro è deliberatamente limitato alle superfici implementate. Non esistono ancora API amministrative per Tenant, Organization, Facility, Application o Runtime Cell; non viene quindi simulata una copertura inesistente. Non sono introdotti RLS PostgreSQL, cache distribuite, resolver dei provider segreti o un sink di security decision indipendente. Questi elementi restano work item espliciti, non prerequisiti implicitamente dati per acquisiti.
 
-P1-0108 è completata. P1-0109 ha successivamente qualificato Unicode, locale, timezone e ID; WP1-01 e Gate G2 restano aperti per P1-0110 e per le ulteriori prove di gate descritte nella roadmap.
+P1-0108 è completata. P1-0109 ha successivamente qualificato Unicode, locale, timezone e ID; P1-0110 ha completato seed e piani di scala. Tutte le attività WP1-01 sono implementate e Gate G2 resta pending per CI/evidence e review/qualification indipendenti.
 
 ## 2. Modello di minaccia
 
@@ -160,7 +160,7 @@ Non esiste una cache dell'inventory. Il gate cerca annotazioni e client cache no
 5. ripetizione dell'intera matrice per hit, miss, stale entry e failover;
 6. protezione da timing oracle e cache poisoning.
 
-Benchmark, noisy-neighbor e piani `EXPLAIN (ANALYZE, BUFFERS)` con seed dimensionale sono responsabilità di P1-0110/G2.
+P1-0110 ha successivamente consegnato seed dimensionale e piani `EXPLAIN (ANALYZE, BUFFERS)`; noisy-neighbour e capacity production restano WP1-12/G8.
 
 ## 8. Casi d'uso sanitari europei 2026
 
@@ -246,7 +246,7 @@ Il conteggio locale è una fotografia, non un criterio hard-coded. Il criterio d
 | API gerarchia superiore | non pubblicate | policy/scope design dedicato |
 | IdP reale, revoca e rollover remoto | validator sintetico locale | IAM qualification/G2 |
 | restore/failover end-to-end | requisito definito, drill non eseguito | WP1-11/M5 |
-| scala/noisy-neighbor | query indicizzate, benchmark pendente | P1-0110/G2 |
+| scala/noisy-neighbor | seed/piani/keyset consegnati da P1-0110; noisy-neighbour distribuito pendente | WP1-12/G8 |
 | Unicode/locale/timezone | consegnata successivamente | [P1-0109](phase-1-p1-0109-implementation.md) |
 | security review indipendente | richiesta ma non sostituibile dal maintainer | staffing checkpoint G2 |
 

@@ -26,7 +26,7 @@ Sono consegnati:
 
 Il contratto machine-readable è [inventory-endpoints-v1.openapi.yaml](../api/openapi/inventory-endpoints-v1.openapi.yaml); la documentazione narrativa resta autoritativa per failure, rollout e limiti non rappresentabili nello schema.
 
-Il completamento di P1-0106 non dichiara concluse le API amministrative di Tenant, Organization, Facility, Application o Runtime Cell. Queste richiedono scope di autorizzazione superiori a `VerifiedFacilityScope`, deleghe e policy non ancora modellate; pubblicarle ora con il token facility-scoped creerebbe un boundary incoerente. P1-0107 ha successivamente consegnato l'audit append-only, P1-0108 la matrice negativa completa e P1-0109 la qualification Unicode/locale/timezone; P1-0110 (seed di scala) resta successivo.
+Il completamento di P1-0106 non dichiara concluse le API amministrative di Tenant, Organization, Facility, Application o Runtime Cell. Queste richiedono scope di autorizzazione superiori a `VerifiedFacilityScope`, deleghe e policy non ancora modellate; pubblicarle ora con il token facility-scoped creerebbe un boundary incoerente. P1-0107 ha successivamente consegnato l'audit, P1-0108 la matrice negativa, P1-0109 la qualification internazionale e P1-0110 il seed con keyset e piani query.
 
 ## 2. Contratto HTTP
 
@@ -153,7 +153,7 @@ Le representation Endpoint non espongono address, credenziali o secret reference
 | `V005__expand__inventory_api_idempotency.sql` | registro ephemeral scoped, vincoli digest/completion/expiry, response snapshot allowlisted | transazionale e additive |
 | `V006__expand__endpoint_api_indexes.sql` | indice Tenant/Facility/Endpoint e indice Tenant/Facility/Application/Endpoint | `CREATE INDEX CONCURRENTLY`, fuori transazione |
 
-Gli indici sono partial sul current view e covering per le colonne restituite. La keyset pagination evita il costo crescente e lo shift di pagina degli offset su collection mutabili. Ogni statement JDBC ha timeout di 5 secondi; il pool resta bounded come in P1-0103. Il benchmark p95, hot tenant, explain plan su seed ≥10.000 Endpoint e tuning dei timeout sono gate P1-0110/qualification, non sono dedotti dai test funzionali.
+Gli indici sono partial sul current view e covering per le colonne restituite. La keyset pagination evita il costo crescente e lo shift di pagina degli offset su collection mutabili. Ogni statement JDBC ha timeout di 5 secondi; il pool resta bounded come in P1-0103. P1-0110 ha qualificato keyset, hot Facility, piani e regression p95 developer su 12.000 Endpoint; saturazione, noisy-neighbour, tuning e capacity production restano WP1-12/G8.
 
 Il registro idempotenza è parte del Platform DB e quindi del suo backup/PITR. Un failover su replica sincrona o un restore al recovery point conserva la stessa decisione di retry disponibile a quel punto. Se RPO > 0 perde un record recente, il client deve riconciliare la resource/business key prima di riprovare; HHC non dichiara exactly-once end-to-end. La pulizia dei record scaduti è bounded e separabile; non deve bloccare la path di creazione.
 
@@ -230,13 +230,13 @@ La chiave non deve essere passata come argomento CLI, committata, inserita in Co
 | deny OIDC/RBAC e invalid request pre-controller | esito qualificato da P1-0108, non ancora journalizzato | WP1-10 |
 | matrice negativa per tutte le risorse/layer implementati | consegnata da P1-0108 | mantenimento continuo |
 | Unicode/locale/timezone completa | consegnata con matrice e gate | [record P1-0109](phase-1-p1-0109-implementation.md) |
-| seed e benchmark ≥10.000 Endpoint | non eseguito | P1-0110 e performance gate |
+| seed e query regression ≥10.000 Endpoint | consegnati su 12.000 Endpoint, senza claim production | [record P1-0110](phase-1-p1-0110-implementation.md) |
 | cursor key rotation multi-key | singola chiave condivisa | hardening/operations increment |
 | cleanup schedulato idempotency | expiry persistita e lazy cleanup per chiave | operations increment |
 | API gerarchie superiori | non esposte con scope facility | authorization/admin API increment |
 | property authorization secret reference | nessun campo secret esposto | futura secret management API |
 
-WP1-01 e Gate G2 restano aperti fino a P1-0110 e relativa qualification; P1-0108 e P1-0109 sono consegnate.
+Le attività WP1-01 sono implementate fino a P1-0110. Gate G2 resta pending per CI/evidence e review/qualification indipendenti.
 
 ## 10. Fonti ufficiali e data di verifica
 
