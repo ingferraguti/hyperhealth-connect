@@ -28,7 +28,7 @@ P1-0105 introduce una reference tipizzata e scoped verso credenziali conservate 
 
 La reference non equivale al secret e non permette di recuperarlo senza tre condizioni esterne: binding locale, workload identity autorizzata e policy del secret manager. Un dump del Platform DB o un export di configurazione non contiene né il valore né un locator direttamente utilizzabile contro il provider.
 
-P1-0105 non completava WP1-01 o Gate G2. P1-0106 ha poi consegnato la API Endpoint senza esporre campi secret e P1-0107 il relativo journal; la matrice negativa estesa resta P1-0108. Il resolver del Data Plane e gli adapter dei provider saranno qualificati nei work package connector/runtime e deployment.
+P1-0105 non completava WP1-01 o Gate G2. P1-0106 ha poi consegnato la API Endpoint senza esporre campi secret, P1-0107 il relativo journal e P1-0108 la matrice negativa estesa sui repository implementati. Il resolver del Data Plane e gli adapter dei provider saranno qualificati nei work package connector/runtime e deployment.
 
 ## 2. Confini di fiducia
 
@@ -340,7 +340,7 @@ Governance:
 | valore segreto in Platform DB/export | strutturalmente escluso | regressione continua |
 | API Endpoint CRUD/ETag/idempotenza | consegnata senza campi secret | P1-0106 |
 | audit tamper-evident | journal Endpoint consegnato; secret operations non ancora esposte | futura secret API/WP1-10 |
-| matrice negativa completa | subset reference/Endpoint incluso | P1-0108/G2 |
+| matrice negativa completa | consegnata da P1-0108 per reference/Endpoint implementati | mantenimento continuo/G2 |
 | adapter provider e resolver Data Plane | non incluso | WP1-04/WP1-11 |
 | workload identity verso provider | boundary richiesto, provisioning specifico non incluso | deployment qualification |
 | rotazione automatica end-to-end | overlap DB provato, provider/consumer non ancora | WP1-11/G8 |

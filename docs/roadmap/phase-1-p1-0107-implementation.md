@@ -26,7 +26,7 @@ Sono consegnati:
 9. rollback dell'operazione di business quando l'append fallisce;
 10. test su PostgreSQL 18.6 per schema, azioni, concorrenza, minimizzazione e immutabilità.
 
-Questo incremento è la fondazione audit del vertical slice inventory, non il completamento del servizio audit enterprise. WP1-10 resta responsabile di sink amministrativamente indipendente, buffering/outbox, inoltro mTLS, retention/WORM, SIEM, allarmi continui, checkpoint esterni, key rotation e audit di tutte le superfici. P1-0108 estenderà la matrice di deny e failure prima del controller. Gate G2 resta aperto fino a P1-0110.
+Questo incremento è la fondazione audit del vertical slice inventory, non il completamento del servizio audit enterprise. WP1-10 resta responsabile di sink amministrativamente indipendente, buffering/outbox, inoltro mTLS, retention/WORM, SIEM, allarmi continui, checkpoint esterni, key rotation e audit di tutte le superfici. P1-0108 ha successivamente qualificato la matrice di deny e failure, inclusi quelli prima del controller, senza attribuire loro un evento inventory inesistente. Gate G2 resta aperto fino a P1-0110.
 
 ## 2. Eventi coperti
 
@@ -40,7 +40,7 @@ Questo incremento è la fondazione audit del vertical slice inventory, non il co
 | `ENDPOINT_UPDATE` | rename o transizione non terminale | `SUCCESS` |
 | `ENDPOINT_DECOMMISSION` | transizione terminale | `SUCCESS` |
 
-Il repository non duplica un evento read durante i controlli interni della mutation. Un retry idempotente è un accesso amministrativo reale e produce un nuovo evento, pur non creando una seconda risorsa. Invalid input, token assente/non valido, capability deny e collision/stale failure avvengono oggi prima dell'append committabile o causano rollback; la relativa security decision deve essere catturata dal boundary di sicurezza/outbox in P1-0108 e WP1-10. Non si dichiara quindi una completezza audit generale inesistente.
+Il repository non duplica un evento read durante i controlli interni della mutation. Un retry idempotente è un accesso amministrativo reale e produce un nuovo evento, pur non creando una seconda risorsa. Invalid input, token assente/non valido, capability deny e collision/stale failure avvengono oggi prima dell'append committabile o causano rollback. P1-0108 ne verifica l'esito fail-closed; la relativa security decision deve essere catturata dal boundary di sicurezza/outbox in WP1-10. Non si dichiara quindi una completezza audit generale inesistente.
 
 ## 3. Modello persistente
 
@@ -186,7 +186,7 @@ L'inventory abilitato senza uno di questi valori fallisce lo startup. Le chiavi 
 
 | Tema | Stato P1-0107 | Chiusura |
 |---|---|---|
-| deny OIDC/RBAC e invalid request | non ancora nel journal transazionale | P1-0108 e WP1-10 |
+| deny OIDC/RBAC e invalid request | esito qualificato da P1-0108; non ancora nel journal transazionale | WP1-10 |
 | audit secret bind/rotate/revoke | modello pronto, operazioni HTTP non esposte | secret management increment/WP1-10 |
 | sink indipendente e SIEM | non consegnati | WP1-10/M4 |
 | checkpoint esterno/WORM | non consegnato | WP1-10/M4 |

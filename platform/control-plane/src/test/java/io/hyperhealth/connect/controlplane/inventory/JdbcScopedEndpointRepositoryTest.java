@@ -3,6 +3,8 @@ package io.hyperhealth.connect.controlplane.inventory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.mockito.Mockito;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.testcontainers.junit.jupiter.Container;
@@ -344,6 +347,168 @@ class JdbcScopedEndpointRepositoryTest {
     }
 
     @Test
+    void deniesTheCompleteCrossFacilityAndCrossTenantMatrixWithoutSideEffectsOrEnumeration() throws Exception {
+        InventoryFixture authorized = createEndpointFixture("Matrix Authorized");
+        InventoryFixture sibling = createEndpointFixture(authorized.tenantId(), "Matrix Sibling");
+        InventoryFixture otherTenant = createEndpointFixture("Matrix Other Tenant");
+        ScopedInventoryService service = new ScopedInventoryService(repository);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
+                        new ScopedEndpointController(
+                                service,
+                                new InventoryCursorCodec(new byte[32], Duration.ofMinutes(15))))
+                .setCustomArgumentResolvers(new VerifiedFacilityScopeArgumentResolver())
+                .setControllerAdvice(new InventoryProblemAdvice())
+                .build();
+
+        long endpointCountBefore = queryCount("SELECT count(*) FROM platform_core.endpoint");
+        long identityCountBefore = queryCount(
+                "SELECT count(*) FROM platform_core.resource_identity WHERE resource_type = 'ENDPOINT'");
+
+        for (InventoryFixture foreign : List.of(sibling, otherTenant)) {
+            // Repository and service reads are scoped before a row can be materialized.
+            assertThat(repository.findEndpoint(
+                            authorized.scope(), actor(), context(), foreign.endpointId()))
+                    .isEmpty();
+            assertThatThrownBy(() -> service.getEndpoint(
+                            authorized.scope(), actor(), context(), foreign.endpointId()))
+                    .isInstanceOf(InventoryResourceNotFoundException.class)
+                    .hasMessageNotContaining(foreign.endpointId().externalForm());
+
+            // A foreign filter is a valid, empty query and cannot turn into an existence oracle.
+            assertThat(repository.listEndpoints(
+                            authorized.scope(),
+                            actor(),
+                            context(),
+                            new EndpointQuery(
+                                    Optional.of(foreign.applicationId()),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    10)))
+                    .satisfies(page -> {
+                        assertThat(page.items()).isEmpty();
+                        assertThat(page.hasMore()).isFalse();
+                    });
+
+            // A failed cross-scope create rolls back its idempotency claim and identity allocation.
+            assertThatThrownBy(() -> service.createEndpoint(
+                            authorized.scope(),
+                            actor(),
+                            context(),
+                            UUID.randomUUID(),
+                            foreign.applicationId(),
+                            "HHC-SYNTHETIC forbidden create"))
+                    .isInstanceOf(InventoryResourceNotFoundException.class)
+                    .hasMessageNotContaining(foreign.applicationId().externalForm());
+
+            // A failed cross-scope patch cannot modify the foreign row or reveal its version.
+            assertThatThrownBy(() -> service.updateEndpoint(
+                            authorized.scope(),
+                            actor(),
+                            context(),
+                            foreign.endpointId(),
+                            0,
+                            new EndpointPatch(Optional.of("HHC-SYNTHETIC forbidden rename"), Optional.empty())))
+                    .isInstanceOf(InventoryResourceNotFoundException.class)
+                    .hasMessageNotContaining(foreign.endpointId().externalForm());
+
+            mockMvc.perform(get("/api/v1/endpoints/{endpointId}", foreign.endpointId().externalForm())
+                            .principal(authentication(authorized.scope()))
+                            .requestAttr(
+                                    VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE,
+                                    authorized.scope())
+                            .header("X-Tenant-ID", foreign.tenantId().externalForm())
+                            .header("X-Facility-ID", foreign.facilityId().externalForm()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("HHC-INV-404-001"))
+                    .andExpect(jsonPath("$.detail").value(
+                            "The resource does not exist or is not visible in the current scope."))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.containsString(foreign.endpointId().externalForm()))))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.containsString("HHC-SYNTHETIC Matrix"))));
+
+            mockMvc.perform(get("/api/v1/endpoints")
+                            .principal(authentication(authorized.scope()))
+                            .requestAttr(
+                                    VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE,
+                                    authorized.scope())
+                            .queryParam("applicationId", foreign.applicationId().externalForm()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items").isEmpty())
+                    .andExpect(jsonPath("$.page.hasMore").value(false))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.containsString(foreign.endpointId().externalForm()))));
+
+            mockMvc.perform(post("/api/v1/endpoints")
+                            .principal(authentication(authorized.scope()))
+                            .requestAttr(
+                                    VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE,
+                                    authorized.scope())
+                            .header("Idempotency-Key", UUID.randomUUID().toString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"applicationId":"%s","displayName":"HHC-SYNTHETIC forbidden create"}
+                                    """.formatted(foreign.applicationId().externalForm())))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("HHC-INV-404-001"))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.containsString(foreign.applicationId().externalForm()))));
+
+            mockMvc.perform(patch("/api/v1/endpoints/{endpointId}", foreign.endpointId().externalForm())
+                            .principal(authentication(authorized.scope()))
+                            .requestAttr(
+                                    VerifiedFacilityScopeArgumentResolver.REQUEST_ATTRIBUTE,
+                                    authorized.scope())
+                            .header("If-Match", "\"rv-0\"")
+                            .contentType("application/merge-patch+json")
+                            .content("{\"displayName\":\"HHC-SYNTHETIC forbidden rename\"}"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("HHC-INV-404-001"))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(
+                            org.hamcrest.Matchers.containsString(foreign.endpointId().externalForm()))));
+
+            assertThat(queryCount(
+                            "SELECT count(*) FROM platform_core.endpoint "
+                                    + "WHERE endpoint_id = ? AND display_name LIKE 'HHC-SYNTHETIC Matrix % Endpoint' "
+                                    + "AND row_version = 0",
+                            foreign.endpointId().value()))
+                    .isEqualTo(1);
+            assertThat(queryCount(
+                            "SELECT count(*) FROM platform_core.inventory_audit_event "
+                                    + "WHERE tenant_id = ? AND facility_id = ?",
+                            foreign.tenantId().value(),
+                            foreign.facilityId().value()))
+                    .isZero();
+        }
+
+        assertThat(queryCount("SELECT count(*) FROM platform_core.endpoint")).isEqualTo(endpointCountBefore);
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.resource_identity WHERE resource_type = 'ENDPOINT'"))
+                .isEqualTo(identityCountBefore);
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.inventory_idempotency_record "
+                                + "WHERE tenant_id = ? AND facility_id = ?",
+                        authorized.tenantId().value(),
+                        authorized.facilityId().value()))
+                .isZero();
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.inventory_audit_event "
+                                + "WHERE tenant_id = ? AND facility_id = ?",
+                        authorized.tenantId().value(),
+                        authorized.facilityId().value()))
+                .isEqualTo(10);
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.inventory_audit_event "
+                                + "WHERE tenant_id = ? AND facility_id = ? "
+                                + "AND action_code = 'ENDPOINT_READ' AND outcome_code = 'FAILURE' "
+                                + "AND reason_code = 'NOT_FOUND_OR_NOT_VISIBLE'",
+                        authorized.tenantId().value(),
+                        authorized.facilityId().value()))
+                .isEqualTo(6);
+        assertThat(auditJournal.verify(authorized.scope()).valid()).isTrue();
+    }
+
+    @Test
     void recordsAnImmutablePseudonymousAndVerifiableInventoryAuditChain() throws Exception {
         InventoryFixture fixture = createEndpointFixture("Audit chain");
         ScopedInventoryService service = new ScopedInventoryService(repository);
@@ -476,11 +641,32 @@ class JdbcScopedEndpointRepositoryTest {
 
         assertThat(secretRepository.exportEndpointReferences(sibling.scope(), authorized.endpointId()))
                 .isEmpty();
+        assertThat(secretRepository.exportEndpointReferences(otherTenant.scope(), authorized.endpointId()))
+                .isEmpty();
         assertThatThrownBy(() ->
                         secretRepository.bindToEndpoint(authorized.scope(), sibling.endpointId(), reference.id()))
                 .isInstanceOf(SecretReferenceUnavailableException.class)
                 .hasMessageNotContaining(reference.id().externalForm())
                 .hasMessageNotContaining(sibling.endpointId().externalForm());
+        assertThatThrownBy(() ->
+                        secretRepository.bindToEndpoint(sibling.scope(), authorized.endpointId(), reference.id()))
+                .isInstanceOf(SecretReferenceUnavailableException.class)
+                .hasMessageNotContaining(reference.id().externalForm())
+                .hasMessageNotContaining(authorized.endpointId().externalForm());
+        assertThatThrownBy(() ->
+                        secretRepository.bindToEndpoint(otherTenant.scope(), authorized.endpointId(), reference.id()))
+                .isInstanceOf(SecretReferenceUnavailableException.class)
+                .hasMessageNotContaining(reference.id().externalForm())
+                .hasMessageNotContaining(authorized.endpointId().externalForm());
+        assertThatThrownBy(() -> secretRepository.register(sibling.scope(), reference))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageNotContaining(reference.id().externalForm())
+                .hasMessageNotContaining(backendBindingId.toString());
+        assertThat(queryCount(
+                        "SELECT count(*) FROM platform_core.endpoint_secret_binding "
+                                + "WHERE secret_reference_id = ?",
+                        reference.id().value()))
+                .isEqualTo(1);
     }
 
     @Test

@@ -192,7 +192,7 @@ Attività:
 - P1-0105: **IMPLEMENTED** — reference scoped e immutabile, binding locale UUID privo di locator, schema senza materiale segreto, export portabile con rebinding obbligatorio e overlap di rotazione; evidenza in [phase-1-p1-0105-implementation.md](phase-1-p1-0105-implementation.md);
 - P1-0106: **IMPLEMENTED** — API Endpoint facility-scoped con keyset pagination e filtri allowlisted, cursor HMAC scoped/TTL, ETag/`If-Match` e idempotenza transazionale concorrente; evidenza in [phase-1-p1-0106-implementation.md](phase-1-p1-0106-implementation.md);
 - P1-0107: **IMPLEMENTED** — journal Endpoint append-only per create/replay/read/list/update/decommission, catena HMAC per Tenant/Facility, pseudonimizzazione, correlation/trace context e atomicità business+audit; evidenza in [phase-1-p1-0107-implementation.md](phase-1-p1-0107-implementation.md);
-- P1-0108: creare test negativi cross-tenant e cross-facility su ogni layer;
+- P1-0108: **IMPLEMENTED** — matrice negativa machine-readable su sibling Facility e altro Tenant per OIDC/RBAC, API, service, repository Endpoint/secret, constraint SQL e audit; non enumerazione, zero side effect e gate CI; evidenza in [phase-1-p1-0108-implementation.md](phase-1-p1-0108-implementation.md);
 - P1-0109: verificare Unicode, timezone, locale e conservazione degli identificativi originali;
 - P1-0110: produrre seed sintetico per almeno due tenant, quattro facility e più endpoint.
 

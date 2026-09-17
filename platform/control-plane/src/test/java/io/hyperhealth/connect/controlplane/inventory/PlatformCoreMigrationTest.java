@@ -168,6 +168,61 @@ class PlatformCoreMigrationTest {
     }
 
     @Test
+    void constraintsRejectCrossFacilityApplicationEndpointAndAuditAncestry() throws SQLException {
+        flyway(null).migrate();
+        UUID tenantA = createTenant("Synthetic Matrix Tenant A");
+        UUID tenantB = createTenant("Synthetic Matrix Tenant B");
+        UUID organizationA = createOrganization(tenantA, "Synthetic Matrix Organization A");
+        UUID organizationB = createOrganization(tenantA, "Synthetic Matrix Organization B");
+        UUID facilityA = createFacility(tenantA, organizationA, "Synthetic Matrix Facility A");
+        UUID facilityB = createFacility(tenantA, organizationB, "Synthetic Matrix Facility B");
+        UUID applicationA = createApplication(
+                tenantA, organizationA, facilityA, "Synthetic Matrix Application A");
+
+        UUID incoherentApplication = UUID.randomUUID();
+        allocate(incoherentApplication, "APPLICATION");
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.application
+                    (application_id, tenant_id, organization_id, facility_id, display_name)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                incoherentApplication,
+                tenantA,
+                organizationA,
+                facilityB,
+                "Cross-facility Application"));
+
+        UUID incoherentEndpoint = UUID.randomUUID();
+        allocate(incoherentEndpoint, "ENDPOINT");
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.endpoint
+                    (endpoint_id, tenant_id, organization_id, facility_id, application_id, display_name)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                incoherentEndpoint,
+                tenantA,
+                organizationB,
+                facilityB,
+                applicationA,
+                "Cross-facility Endpoint"));
+
+        assertSqlState("23503", () -> execute("""
+                INSERT INTO platform_core.inventory_audit_chain_head
+                    (tenant_id, facility_id, last_sequence, last_record_hash)
+                VALUES (?, ?, 0, ?)
+                """, tenantB, facilityA, new byte[32]));
+
+        assertThat(queryLong("SELECT count(*) FROM platform_core.application WHERE application_id = '"
+                        + incoherentApplication + "'::uuid"))
+                .isZero();
+        assertThat(queryLong("SELECT count(*) FROM platform_core.endpoint WHERE endpoint_id = '"
+                        + incoherentEndpoint + "'::uuid"))
+                .isZero();
+        assertThat(queryLong("SELECT count(*) FROM platform_core.inventory_audit_chain_head"))
+                .isZero();
+    }
+
+    @Test
     void runtimeCellRequiresAnImmutableExplicitScopeAndRejectsDuplicateAssignment() throws SQLException {
         flyway(null).migrate();
         UUID tenantId = createTenant("Synthetic Runtime Tenant");

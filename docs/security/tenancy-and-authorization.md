@@ -96,7 +96,7 @@ Il ruolo human `FacilityOperator` riceve `HHC_INVENTORY_READ` e `HHC_INVENTORY_W
 
 Controller, service e repository propagano `InventoryActor` e `InventoryAuditContext` insieme allo scope verificato. Il tipo attore deriva dal profilo OIDC `HUMAN|WORKLOAD`, non da un header client. Subject e resource key sono HMAC-pseudonimizzati con chiave dedicata; nel journal resta in chiaro soltanto l'authorized party già allowlisted, necessario per attribuire il client applicativo.
 
-Il journal verifica nuovamente che la Facility appartenga al Tenant prima di creare il chain head o l'evento. Uno scope internamente incoerente fallisce chiuso e non può creare un record audit orfano. Le mutation privilegiate non possono essere committate senza evento; i deny del filtro OIDC/RBAC precedenti al controller sono responsabilità della matrice P1-0108 e del servizio audit WP1-10. I dettagli sono in [P1-0107](../roadmap/phase-1-p1-0107-implementation.md).
+Il journal verifica nuovamente che la Facility appartenga al Tenant prima di creare il chain head o l'evento. Uno scope internamente incoerente fallisce chiuso e non può creare un record audit orfano. Le mutation privilegiate non possono essere committate senza evento. La matrice [P1-0108](../roadmap/phase-1-p1-0108-implementation.md) verifica i deny OIDC/RBAC precedenti al controller; la registrazione di tali security decision in un sink indipendente resta responsabilità di WP1-10. I dettagli del journal sono in [P1-0107](../roadmap/phase-1-p1-0107-implementation.md).
 
 ## 7. Isolamento per layer
 

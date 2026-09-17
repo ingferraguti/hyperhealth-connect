@@ -144,7 +144,7 @@ Tutti i fixture sono marcati `HHC-SYNTHETIC`. Il test PostgreSQL usa la stessa i
 - il pool è bounded per evitare esaurimento del writer da parte di una singola replica;
 - timeout e failure di connessione non attivano fallback unscoped o cache globale;
 - il correlation ID consente di collegare errore API e futura telemetria senza includere PHI;
-- P1-0103 non includeva audit; P1-0107 ha poi consegnato gli accessi Endpoint, mentre i deny pre-controller restano P1-0108/WP1-10;
+- P1-0103 non includeva audit; P1-0107 ha poi consegnato gli accessi Endpoint e P1-0108 ha qualificato i deny pre-controller, la cui registrazione indipendente resta WP1-10;
 - benchmark, noisy-neighbor e piano `EXPLAIN` sul seed multi-tenant restano parte di P1-0110/G2.
 
 ## Confini deliberati
@@ -155,10 +155,10 @@ Non sono inclusi:
 - secret reference scoped, schema senza valore/locator ed export con rebinding obbligatorio, successivamente introdotti da P1-0105; resolver provider e rotazione end-to-end restano nei work item runtime/deployment;
 - create/update/decommission, collection, pagination, ETag e idempotenza, successivamente consegnati da P1-0106;
 - audit journal Endpoint, successivamente consegnato da P1-0107;
-- matrice negativa per ogni risorsa/layer e RLS defense-in-depth, prevista da P1-0108;
+- matrice negativa per i layer del vertical slice, consegnata da P1-0108; RLS defense-in-depth resta un hardening separato non ancora implementato;
 - seed e benchmark su scala, previsti da P1-0110.
 
-P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference, P1-0106 le collection/mutazioni Endpoint e P1-0107 il relativo journal. G2 rimane aperto fino al completamento di P1-0108…P1-0110 e della qualification prevista.
+P1-0103 non chiudeva Gate G2 e non rendeva utilizzabile l'API senza P1-0104. Dopo P1-0104 il vertical slice può essere abilitato soltanto con OIDC configurato; P1-0105 ha aggiunto la persistence scoped delle secret reference, P1-0106 le collection/mutazioni Endpoint, P1-0107 il relativo journal e P1-0108 la matrice negativa. G2 rimane aperto per P1-0109, P1-0110 e la qualification prevista.
 
 ## Fonti ufficiali
 

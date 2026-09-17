@@ -211,7 +211,7 @@ La collection usa keyset pagination ordinata per Endpoint ID, limite 1–100 e f
 
 `PATCH` usa `application/merge-patch+json`, accetta soltanto display name e lifecycle e richiede un ETag forte `If-Match: "rv-N"`. L'assenza produce 428, una versione stale 412. Decommission è terminale e non cancella identity o history. Solo `FacilityOperator` riceve `HHC_INVENTORY_WRITE`; Auditor e RuntimeAgent restano read-only.
 
-Le API dei livelli superiori non sono pubblicate sotto un token limitato alla Facility. P1-0107 ha aggiunto l'audit append-only del vertical slice Endpoint; matrice negativa completa, qualification Unicode e seed/benchmark restano P1-0108…P1-0110. Contratto, failure matrix, casi d'uso e fonti verificate sono in [phase-1-p1-0106-implementation.md](../roadmap/phase-1-p1-0106-implementation.md).
+Le API dei livelli superiori non sono pubblicate sotto un token limitato alla Facility. P1-0107 ha aggiunto l'audit append-only del vertical slice Endpoint e P1-0108 la matrice negativa completa sui layer implementati; qualification Unicode e seed/benchmark restano P1-0109/P1-0110. Contratto e failure matrix sono in [P1-0106](../roadmap/phase-1-p1-0106-implementation.md); l'evidence di isolamento è in [P1-0108](../roadmap/phase-1-p1-0108-implementation.md).
 
 ### 7.7 Incremento P1-0107 — correlazione e audit inventory
 
@@ -219,7 +219,7 @@ Ogni operazione Endpoint accetta opzionalmente `traceparent` W3C versione `00`. 
 
 Create, replay, read, list, update e decommission producono un evento nel journal facility-scoped. Le mutation e il relativo evento sono atomici; read/list sono fail-closed se l'append non riesce. Subject e resource ID sono HMAC-pseudonimizzati prima dello storage, e body, display name, cursor, idempotency key, token e secret non sono registrati.
 
-Un read di risorsa assente, dismessa o cross-scope conserva la semantica non enumerabile `404` e registra `NOT_FOUND_OR_NOT_VISIBLE`, senza l'ID raw. I deny OIDC/RBAC che avvengono prima del controller saranno completati nel boundary security di P1-0108/WP1-10. Specifica, modello di minaccia e recovery sono in [phase-1-p1-0107-implementation.md](../roadmap/phase-1-p1-0107-implementation.md).
+Un read di risorsa assente, dismessa o cross-scope conserva la semantica non enumerabile `404` e registra `NOT_FOUND_OR_NOT_VISIBLE`, senza l'ID raw. P1-0108 verifica i deny OIDC/RBAC che avvengono prima del controller; la loro registrazione in un sink security indipendente resta WP1-10. Specifica audit e recovery sono in [P1-0107](../roadmap/phase-1-p1-0107-implementation.md), la matrice in [P1-0108](../roadmap/phase-1-p1-0108-implementation.md).
 
 Il contratto OpenAPI versionato del vertical slice è [inventory-endpoints-v1.openapi.yaml](./openapi/inventory-endpoints-v1.openapi.yaml).
 
