@@ -2,7 +2,7 @@
 
 **Stato:** IMPLEMENTED
 
-**Baseline verificata:** 17 settembre 2026
+**Baseline verificata:** 17 settembre 2026; regressione temporale corretta il 9 novembre 2026
 
 **Ambito:** Control Plane, vertical slice inventory `Endpoint` facility-scoped
 
@@ -215,6 +215,7 @@ Un messaggio futuro riporta soltanto `2026-10-25 02:30`, ambiguo in Europa/Roma.
 |---|---|
 | `InventoryInternationalizationTest` | multiscript, NFD, emoji, code-point boundary, surrogate malformate, control e whitespace |
 | `InventoryIdTest` | round-trip dei sei ID, quattro locale e reject di case/whitespace/confusable |
+| `ScopedInventoryServiceTest` | calcolo deterministico della scadenza idempotency da `Clock` in corrispondenza dell'overlap DST |
 | `JdbcScopedEndpointRepositoryTest` | round-trip service/PostgreSQL/JDBC/JSON, byte UTF-8, session timezone, DST, idempotency e audit |
 | `PlatformCoreMigrationTest` | encoding e introspezione delle colonne temporali di dominio |
 | `phase-1-internationalization-matrix.yml` | catalogo machine-readable di invarianti, casi e oracle |
@@ -228,6 +229,26 @@ Comandi di accettazione:
 ```
 
 Il workflow CI pubblica `target/phase1-p1-0109-evidence/internationalization-gate-report.json`. Dati e ID di test sono sintetici; non sono usati record sanitari reali.
+
+### 11.1 Correzione della regressione temporale del 9 novembre 2026
+
+La prova PostgreSQL originaria costruiva la scadenza idempotency da un `Clock.fixed`
+impostato sull'overlap DST del 25 ottobre 2026, mentre `created_at` era correttamente
+assegnato da `transaction_timestamp()` del database. Dal 26 ottobre 2026 in avanti
+la scadenza risultava quindi anteriore alla creazione e il vincolo
+`ck_inventory_idempotency_expiry` rifiutava il record. Era un time bomb del test, non
+un difetto del vincolo o della logica di produzione.
+
+La correzione separa gli oracle senza indebolirli:
+
+- `ScopedInventoryServiceTest` verifica con mock/captor che il service calcoli
+  esattamente `overlapInstant + retention` usando il `Clock` iniettato;
+- `JdbcScopedEndpointRepositoryTest` crea il record tramite il percorso reale con
+  clock corrente, quindi assegna in una singola `UPDATE` una timeline storica valida
+  (`created_at < completed_at < expires_at`) prima di leggerla con quattro timezone
+  di sessione;
+- il vincolo SQL resta invariato e attivo; non sono stati introdotti skip, retry,
+  tolleranze, date future mobili o alterazioni del codice di produzione.
 
 ## 12. Criteri di completamento
 

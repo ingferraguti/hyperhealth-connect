@@ -1,0 +1,44 @@
+schemaVersion: hhc.agentic-change/v1
+changeId: P1-0109-DST-REGRESSION-20261109
+taskRef: P1-0109
+baseCommit: 77d76de5592b66d723c65feee36ffc6a28031849
+resultCommit: pending-pull-request
+classification: A3
+classificationRationale: The change repairs a critical timezone, idempotency and audit test oracle without changing production behavior or database constraints.
+humanAccountableOwner: repository-maintainer
+agentOperator: repository-maintainer
+oracleOwners: [quality-engineering, database-reliability]
+agent:
+  provider: openai
+  model: codex-session-model
+  serviceVersion: unavailable
+  policyProfile: workspace-write-no-production-access
+execution:
+  tools: [apply-patch, maven-3.9.16, docker-desktop, powershell-gate]
+  networkDestinations: [repo.maven.apache.org, docker.io]
+  permissions: [repository-read, workspace-write, test-execute, local-docker]
+scope:
+  allowedPaths:
+    - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java
+    - platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/ScopedInventoryServiceTest.java
+    - docs/testing/phase-1-internationalization-matrix.yml
+    - docs/roadmap/phase-1-p1-0109-implementation.md
+    - scripts/phase1-p1-0109-gate.ps1
+    - governance/agentic-changes/P1-0109-DST-REGRESSION.yml
+  dataClasses: [synthetic]
+evidence:
+  requirementIds: [FR-TEN-001, NFR-I18N-001]
+  testRunIds: [local-targeted-maven, local-clean-verify]
+  independentOracleRefs:
+    - docs/testing/phase-1-internationalization-matrix.yml
+    - platform/control-plane/src/main/resources/db/migration/V005__expand__inventory_api_idempotency.sql
+    - PostgreSQL-18-timestamptz
+  sbomRef: produced-by-normal-ci
+  provenanceRef: produced-by-normal-ci
+  sourceRefs: [PostgreSQL-18-Date-Time-Types, Java-SE-21-Clock]
+reviews:
+  - {role: quality-engineering, decision: pending-human-review, recordRef: issue-4}
+  - {role: database-reliability, decision: pending-human-review, recordRef: issue-4}
+limitations:
+  - Agent-generated tests do not replace independent human review of the A3 oracle change.
+  - No production source, migration, constraint, retention value or authorization boundary is changed.

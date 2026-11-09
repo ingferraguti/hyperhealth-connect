@@ -20,6 +20,7 @@ $testPaths = @(
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryInternationalizationTest.java',
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/InventoryIdTest.java',
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/JdbcScopedEndpointRepositoryTest.java',
+    'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/ScopedInventoryServiceTest.java',
     'platform/control-plane/src/test/java/io/hyperhealth/connect/controlplane/inventory/PlatformCoreMigrationTest.java'
 )
 $required = @($matrixPath, $implementationPath) + $testPaths
@@ -48,6 +49,7 @@ $requiredMethods = @(
     'rejectsWhitespaceCaseVariantsAndUnicodeConfusablesInsteadOfRewritingIdentifiers',
     'roundTripsUnicodeThroughServicePostgresqlAndUtf8JsonWithoutSilentNormalization',
     'preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap',
+    'computesIdempotencyExpiryFromInjectedClockAcrossADstOverlap',
     'usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant'
 )
 $missingMethods = @($requiredMethods | Where-Object { $testCorpus -notmatch [regex]::Escape($_) })

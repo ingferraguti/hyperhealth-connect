@@ -1,6 +1,6 @@
 schemaVersion: 1
 activity: P1-0109
-baselineDate: 2026-09-17
+baselineDate: 2026-11-09
 status: implemented
 dataPolicy: synthetic-only
 scopeModel: verified-tenant-and-facility
@@ -68,6 +68,7 @@ cases:
   - {id: LOC-LIFECYCLE-ROOT-CASE, dimension: locale, layer: api, oracle: locale-root-transform, automatedBy: phase1-p1-0109-gate.locale-root-lifecycle}
   - {id: TZ-DOMAIN-TIMESTAMPTZ, dimension: timezone, layer: postgresql, oracle: no-domain-timestamp-without-zone, automatedBy: PlatformCoreMigrationTest.usesUtf8AndTimezoneAwareColumnsForEveryPersistedInstant}
   - {id: TZ-DST-OVERLAP, dimension: timezone, layer: jdbc, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
+  - {id: TZ-IDEMPOTENCY-CLOCK, dimension: timezone, layer: service, oracle: fixed-instant-plus-retention, automatedBy: ScopedInventoryServiceTest.computesIdempotencyExpiryFromInjectedClockAcrossADstOverlap}
   - {id: TZ-SESSION-UTC, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
   - {id: TZ-SESSION-EUROPE-ROME, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}
   - {id: TZ-SESSION-EUROPE-HELSINKI, dimension: timezone, layer: postgresql, oracle: same-instant, automatedBy: JdbcScopedEndpointRepositoryTest.preservesTheSameInstantAcrossSessionTimezonesAtADstOverlap}

@@ -356,19 +356,26 @@ class JdbcScopedEndpointRepositoryTest {
                     .isEqualTo(overlapInstant);
         }
 
-        ScopedInventoryService timedService = new ScopedInventoryService(
-                repository,
-                Clock.fixed(overlapInstant, ZoneOffset.UTC),
-                Duration.ofHours(24));
+        ScopedInventoryService service = new ScopedInventoryService(repository);
         InventoryAuditContext fixedContext = new InventoryAuditContext(
                 UUID.randomUUID(), "0123456789abcdef0123456789abcdef", overlapInstant);
-        EndpointCreationResult created = timedService.createEndpoint(
+        EndpointCreationResult created = service.createEndpoint(
                 fixture.scope(),
                 actor(),
                 fixedContext,
                 UUID.randomUUID(),
                 fixture.applicationId(),
                 "HHC-SYNTHETIC DST overlap endpoint");
+        Instant expiryInstant = overlapInstant.plus(Duration.ofHours(24));
+        execute("""
+                UPDATE platform_core.inventory_idempotency_record
+                   SET created_at = ?, completed_at = ?, expires_at = ?
+                 WHERE response_endpoint_id = ?
+                """,
+                overlapInstant.atOffset(ZoneOffset.UTC),
+                overlapInstant.plusSeconds(1).atOffset(ZoneOffset.UTC),
+                expiryInstant.atOffset(ZoneOffset.UTC),
+                created.endpoint().endpointId().value());
 
         for (String zone : List.of("UTC", "Europe/Rome", "Europe/Helsinki", "America/New_York")) {
             assertThat(queryInstantInZone(
@@ -376,7 +383,7 @@ class JdbcScopedEndpointRepositoryTest {
                             "SELECT expires_at FROM platform_core.inventory_idempotency_record "
                                     + "WHERE response_endpoint_id = ?",
                             created.endpoint().endpointId().value()))
-                    .isEqualTo(overlapInstant.plus(Duration.ofHours(24)));
+                    .isEqualTo(expiryInstant);
             assertThat(queryInstantInZone(
                             zone,
                             "SELECT occurred_at FROM platform_core.inventory_audit_event "
