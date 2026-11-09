@@ -11,8 +11,8 @@ Tracker machine-readable: [`governance/phase-1-delivery-tracker.yml`](../../gove
 | Work package | Stato | Gate | Epic issue | Dipendenza immediata |
 |---|---|---|---|---|
 | WP1-00 Mobilitazione | DONE | G1 PASS | [#3](https://github.com/ingferraguti/hyperhealth-connect/issues/3) | completato l'11 settembre 2026 |
-| WP1-01 Tenancy/identity/DB | VERIFYING — P1-0101…0110 implemented | G2 PENDING | [#4](https://github.com/ingferraguti/hyperhealth-connect/issues/4) | CI/evidence G2 e review security/IAM indipendente |
-| WP1-02 Raw/durability | READY | G3 | [#5](https://github.com/ingferraguti/hyperhealth-connect/issues/5) | G1 e scope WP1-01 |
+| WP1-01 Tenancy/identity/DB | VERIFYING — P1-0101…0110 implemented | G2 PENDING | [#4](https://github.com/ingferraguti/hyperhealth-connect/issues/4) | qualification IdP/grant/backup e review security/IAM indipendente |
+| WP1-02 Raw/durability | IN PROGRESS — P1-0201 implemented | G3 PENDING | [#5](https://github.com/ingferraguti/hyperhealth-connect/issues/5) | P1-0202 checksum dei byte originali |
 | WP1-03 Reliability kernel | PLANNED | G4 | [#6](https://github.com/ingferraguti/hyperhealth-connect/issues/6) | G3 |
 | WP1-04 Connector SDK | PLANNED | G5 | [#7](https://github.com/ingferraguti/hyperhealth-connect/issues/7) | G2–G4 |
 | WP1-05 MLLP/REST/FHIR | PLANNED | G6 | [#8](https://github.com/ingferraguti/hyperhealth-connect/issues/8) | G5 |
@@ -28,7 +28,8 @@ Tracker machine-readable: [`governance/phase-1-delivery-tracker.yml`](../../gove
 ## Lettura del dashboard
 
 - `READY` significa scope, owner, acceptance ed evidence target definiti; non significa implementato.
-- `VERIFYING` significa artifact completati localmente ma non ancora qualificati dal merge/CI.
+- `IN PROGRESS` significa che almeno un'attività è implementata ma il work package non ha ancora completato tutte le attività o il gate.
+- `VERIFYING` significa attività e artifact implementati, ma gate non ancora qualificato integralmente da evidence, review o prove esterne richieste.
 - La percentuale non viene stimata da righe di codice. Si contano work package passati dal rispettivo gate.
 - Il milestone GitHub è il board operativo disponibile con i permessi correnti. Il token del maintainer non ha scope GitHub Projects; questa limitazione non riduce tracciabilità perché epic, label e stato canonico sono versionati e collegati.
 

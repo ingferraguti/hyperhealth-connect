@@ -1,0 +1,48 @@
+schemaVersion: hhc.agentic-change/v1
+changeId: P1-0201
+taskRef: P1-0201
+baseCommit: 455219ad876cfe07babc228c4c10d8e0b68978f5
+resultCommit: pending-pull-request
+classification: A3
+classificationRationale: Envelope tenancy scope and lineage identifiers affect isolation, replay and clinical event attribution.
+humanAccountableOwner: repository-maintainer
+agentOperator: repository-maintainer
+oracleOwners: [runtime-engineering, product-security]
+agent:
+  provider: openai
+  model: codex-session-model
+  serviceVersion: unavailable
+  policyProfile: workspace-write-no-production-access
+execution:
+  tools: [apply-patch, maven-3.9.16, powershell-gate]
+  networkDestinations: [repo.maven.apache.org, rfc-editor.org, json-schema.org, github.com/cloudevents]
+  permissions: [repository-read, workspace-write, test-execute, official-source-read]
+scope:
+  allowedPaths:
+    - integration-envelope/**
+    - docs/canonical-model/integration-envelope.md
+    - docs/roadmap/**
+    - docs/testing/**
+    - governance/**
+    - scripts/phase1-p1-0201-gate.ps1
+    - .github/workflows/phase0.yml
+  dataClasses: [synthetic]
+evidence:
+  requirementIds: [FR-EVT-001]
+  testRunIds: [local-targeted-maven, hosted-ci-pending]
+  independentOracleRefs:
+    - docs/product/requirements.md#FR-EVT-001
+    - docs/adr/ADR-004-immutable-raw-events.md
+    - docs/adr/ADR-026-durable-ingest-transaction-and-ack.md
+    - RFC-9562
+    - JSON-Schema-2020-12
+  sbomRef: produced-by-normal-ci
+  provenanceRef: produced-by-normal-ci
+  sourceRefs: [RFC-9562, JSON-Schema-2020-12, CloudEvents-1.0.2]
+reviews:
+  - {role: runtime-engineering, decision: pending-human-review, recordRef: issue-5}
+  - {role: product-security, decision: pending-human-review, recordRef: issue-5}
+limitations:
+  - Agent-generated tests are not an independent human approval.
+  - P1-0201 does not qualify checksum, durability, ACK behavior, HA, BC or DR.
+  - resultCommit is populated by the pull-request and CI evidence rather than self-referentially in this manifest.

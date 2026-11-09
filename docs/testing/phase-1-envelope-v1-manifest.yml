@@ -1,0 +1,100 @@
+schemaVersion: 1
+activity: P1-0201
+baselineDate: 2026-11-09
+status: implemented
+riskClass: A3
+classification: synthetic-only
+
+contract:
+  envelopeVersion: hhc-envelope/v1
+  javaType: integration-envelope/src/main/java/io/hyperhealth/connect/envelope/IntegrationEnvelope.java
+  jsonSchema: integration-envelope/src/main/resources/schema/hhc-envelope-v1.schema.json
+  jsonSchemaSha256: dcc5273e672d9a0ccad37eeffa301f4a98cd15e68343d3b6c9704d1ac3ed7b30
+  syntheticExample: integration-envelope/src/test/resources/envelope/hhc-envelope-v1-synthetic.json
+  requiredGroups: [identity, correlation, scope, processing, time]
+  optionalFields: [causationId]
+  unsupportedMajorBehavior: reject-fail-closed
+
+identifierPolicy:
+  messageId:
+    representation: canonical-lowercase-urn-uuid
+    acceptedVersions: [4, 7]
+    nilAllowed: false
+  correlationId:
+    representation: bounded-safe-ascii-technical-token
+    maximumCharacters: 128
+    clinicalOrPatientIdentifierAllowed: false
+  causationId:
+    representation: messageId
+    optional: true
+    selfReferenceAllowed: false
+  tenantId:
+    representation: canonical-t-prefix-non-nil-uuid
+  facilityId:
+    representation: canonical-f-prefix-non-nil-uuid
+  flowId:
+    representation: canonical-flow-prefix-lowercase-token
+    maximumCharacters: 69
+  flowVersion:
+    representation: exact-immutable-bounded-token
+    maximumCharacters: 128
+
+invariants:
+  - id: ENV-01
+    statement: Every accepted envelope has the exact hhc-envelope/v1 major contract marker.
+  - id: ENV-02
+    statement: Message identity is globally usable, canonical, non-nil and distinct from correlation.
+  - id: ENV-03
+    statement: Causation is absent for a root event or references another valid message; self-causation is rejected.
+  - id: ENV-04
+    statement: Tenant and Facility are canonical immutable scope identifiers and cannot be swapped by type.
+  - id: ENV-05
+    statement: Flow identity is canonical and its exact immutable version is always present.
+  - id: ENV-06
+    statement: Receive time is an Instant at the HHC trust boundary and is not a source clinical timestamp.
+  - id: ENV-07
+    statement: Correlation is bounded and excludes whitespace and control characters to prevent forged telemetry records.
+  - id: ENV-08
+    statement: The P1-0201 envelope contains no raw payload, checksum, secret, patient or business identifier.
+
+automatedChecks:
+  - {id: ROOT-IDENTITY, layer: domain, oracle: required-fields-preserved, automatedBy: IntegrationEnvelopeTest.createsRootEnvelopeWithImmutableScopedIdentity}
+  - {id: CAUSATION-SEPARATION, layer: domain, oracle: optional-distinct-causation, automatedBy: IntegrationEnvelopeTest.preservesExplicitCausationWithoutConflatingItWithCorrelation}
+  - {id: UUID-POLICY, layer: domain, oracle: only-canonical-v4-v7-message-id, automatedBy: IntegrationEnvelopeTest.acceptsRfc9562UuidVersion4AndVersion7MessageIds}
+  - {id: VERSION-FAIL-CLOSED, layer: domain, oracle: unknown-major-rejected, automatedBy: IntegrationEnvelopeTest.rejectsUnsupportedEnvelopeVersionFailClosed}
+  - {id: SELF-CAUSATION, layer: domain, oracle: self-reference-rejected, automatedBy: IntegrationEnvelopeTest.rejectsSelfCausation}
+  - {id: CORRELATION-BOUND, layer: security, oracle: whitespace-control-and-oversize-rejected, automatedBy: IntegrationEnvelopeTest.rejectsUnboundedOrUnsafeCorrelationValues}
+  - {id: SCOPE-TYPING, layer: tenancy, oracle: prefix-canonicality-and-nil-checked, automatedBy: IntegrationEnvelopeTest.rejectsCrossTypeAndNonCanonicalScopeIdentifiers}
+  - {id: SCOPE-CONTROL-PLANE-COMPATIBILITY, layer: tenancy, oracle: canonical-non-nil-inventory-id-round-trip, automatedBy: IntegrationEnvelopeTest.acceptsCanonicalNonNilInventoryIdsSupportedByTheControlPlane}
+  - {id: FLOW-PINNING, layer: configuration, oracle: canonical-id-and-bounded-version, automatedBy: IntegrationEnvelopeTest.rejectsNonCanonicalOrMutableFlowReferences}
+  - {id: SCHEMA-CONTRACT, layer: contract, oracle: draft-2020-12-required-shape-and-patterns, automatedBy: scripts/phase1-p1-0201-gate.ps1}
+  - {id: SYNTHETIC-FIXTURE, layer: data-governance, oracle: visible-synthetic-markers-and-no-clinical-field, automatedBy: scripts/phase1-p1-0201-gate.ps1}
+
+qualificationBoundary:
+  included:
+    - immutable-envelope-v1-identity-core
+    - tenant-and-facility-scope-shape
+    - correlation-and-causation-semantics
+    - flow-id-and-exact-version
+    - technical-receive-time
+    - json-schema-and-synthetic-example
+  excluded:
+    - raw-payload-reference
+    - checksum-and-byte-count
+    - object-store-durability
+    - ingest-ledger-persistence
+    - idempotency-and-ordering
+    - ack-policy-and-ack-emission
+    - cloud-events-binding-conformance
+    - production-throughput-or-ha-qualification
+  exclusionRationale: >-
+    P1-0201 establishes only the stable identity and routing core. P1-0202 through
+    P1-0210 add integrity, storage and lifecycle behavior; G3 remains pending until
+    the complete durability and crash matrix is independently qualified.
+
+execution:
+  command: ./mvnw -B -ntp -pl integration-envelope -am -Dtest=IntegrationEnvelopeTest -Dsurefire.failIfNoSpecifiedTests=false test
+  gate: ./scripts/phase1-p1-0201-gate.ps1
+  evidence:
+    - integration-envelope/target/surefire-reports/TEST-io.hyperhealth.connect.envelope.IntegrationEnvelopeTest.xml
+    - target/phase1-p1-0201-evidence/envelope-v1-gate-report.json

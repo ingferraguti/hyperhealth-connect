@@ -1,0 +1,17 @@
+{
+  "envelopeVersion": "hhc-envelope/v1",
+  "messageId": "urn:uuid:01991d95-0000-7000-8000-000000000001",
+  "correlationId": "cor-HHC-SYNTHETIC-episode-42",
+  "causationId": "urn:uuid:01991d94-0000-7000-8000-000000000001",
+  "scope": {
+    "tenantId": "t-10000000-0000-4000-8000-000000000001",
+    "facilityId": "f-30000000-0000-4000-8000-000000000001"
+  },
+  "processing": {
+    "flowId": "flow-synthetic-lab-results",
+    "flowVersion": "1.0.0"
+  },
+  "time": {
+    "receivedAt": "2026-11-09T10:15:30.123456Z"
+  }
+}

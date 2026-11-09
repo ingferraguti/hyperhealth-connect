@@ -4,7 +4,7 @@
 |---|---|
 | Stato | Indice normativo 1.0 |
 | Target | HHC enterprise multi-azienda, multi-facility e multi-site |
-| Ultimo aggiornamento | 17 settembre 2026 |
+| Ultimo aggiornamento | 9 novembre 2026 |
 | Owner | Quality Engineering |
 
 ## 1. Scopo della sezione
@@ -23,6 +23,7 @@ I documenti coprono sia il prodotto enterprise finale sia l'MVP. L'MVP usa gli s
 6. [Matrice di isolamento P1-0108](./phase-1-tenant-isolation-matrix.yml): casi negativi cross-tenant/cross-facility e relativo oracle automatizzato.
 7. [Matrice Unicode, locale, timezone e ID P1-0109](./phase-1-internationalization-matrix.yml): round-trip UTF-8, ID canonici e istanti invarianti tra timezone.
 8. [Manifest scala inventory P1-0110](./phase-1-inventory-scale-manifest.yml): seed deterministico, hot scope, keyset, audit, piani query e confine dei claim.
+9. [Manifest Envelope v1 P1-0201](./phase-1-envelope-v1-manifest.yml): identità, scope, correlation/causation, Flow/version, JSON Schema e limiti rispetto alla durabilità.
 
 ## 3. Autorità dei documenti
 
@@ -65,6 +66,7 @@ Un test verde non modifica un requisito. Se la documentazione e l'implementazion
 | Tenant isolation | phase-1-tenant-isolation-matrix | report gate JSON e test PostgreSQL/OIDC/API |
 | Unicode, locale, timezone e ID | phase-1-internationalization-matrix | report gate JSON e test service/PostgreSQL/JDBC/API/audit |
 | Scala inventory WP1-01 | phase-1-inventory-scale-manifest | digest seed, Surefire, piani indicizzati e report runtime/gate JSON |
+| Envelope v1 identity core | phase-1-envelope-v1-manifest | digest JSON Schema, fixture sintetica, Surefire e gate report JSON |
 
 ## 6. Gate MVP e prodotto finale
 

@@ -1,8 +1,10 @@
 # HHC Integration Envelope
 
-Stato: specifica baseline 1.0  
-Data di aggiornamento: 1 settembre 2026  
-Ultima verifica fonti ufficiali: 1 settembre 2026  
+Stato: specifica baseline 1.0; identity core P1-0201 implementato
+
+Data di aggiornamento: 9 novembre 2026
+
+Ultima verifica fonti ufficiali: 9 novembre 2026
 Target: contratto tecnico stabile per ogni evento, file, documento e oggetto gestito da HHC
 
 ## 1. Finalità
@@ -116,6 +118,20 @@ integrity:
 ```
 
 ## 4. Cardinalità e regole
+
+### 4.1 Subset eseguibile P1-0201
+
+P1-0201 rende eseguibile il core composto da `envelopeVersion`, `messageId`,
+`correlationId`, `causationId` opzionale, `scope.tenantId`, `scope.facilityId`,
+`processing.flowId`, `processing.flowVersion` e `time.receivedAt`. L'autorità
+machine-readable è
+[`hhc-envelope-v1.schema.json`](../../integration-envelope/src/main/resources/schema/hhc-envelope-v1.schema.json);
+invarianti, casi negativi e confini sono nel
+[`phase-1-envelope-v1-manifest.yml`](../testing/phase-1-envelope-v1-manifest.yml).
+
+Il subset non dichiara implementati `content`, raw reference, checksum, byte count,
+ledger, idempotency, ACK o durability. I gruppi successivi estenderanno v1 con
+compatibility test espliciti; non possono reinterpretare i campi già consegnati.
 
 | Gruppo | Obbligatorio a `RECEIVED` | Obbligatorio a `DURABLE` | Note |
 |---|---:|---:|---|

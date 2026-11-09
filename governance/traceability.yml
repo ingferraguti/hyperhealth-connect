@@ -1,6 +1,6 @@
 schemaVersion: 1
 baseline: phase-1-WP1-00
-reviewedAt: 2026-09-17
+reviewedAt: 2026-11-09
 items:
   - requirement: NFR-SEC-001
     decisions: [ADR-008, ADR-009]
@@ -103,7 +103,20 @@ items:
   - requirement: FR-EVT-001
     decisions: [ADR-004, ADR-006, ADR-026]
     controls: [CTRL-DATA-001, CTRL-BC-001, CTRL-RESTORE-001, CTRL-TRACE-001]
-    tests: [planned/R0.2/G3/durability-crash-matrix, planned/R0.2/G3/s3-contract]
+    implementation:
+      - integration-envelope/src/main/java/io/hyperhealth/connect/envelope/IntegrationEnvelope.java
+      - integration-envelope/src/main/resources/schema/hhc-envelope-v1.schema.json
+    tests:
+      - integration-envelope/src/test/java/io/hyperhealth/connect/envelope/IntegrationEnvelopeTest.java
+      - integration-envelope/src/test/resources/envelope/hhc-envelope-v1-synthetic.json
+      - docs/testing/phase-1-envelope-v1-manifest.yml
+      - delivered/P1-0201/envelope-v1-identity-core
+      - planned/R0.2/G3/durability-crash-matrix
+      - planned/R0.2/G3/s3-contract
+    deliveredEvidence:
+      - target/phase1-p1-0201-evidence/envelope-v1-gate-report.json
+      - integration-envelope/target/surefire-reports/TEST-io.hyperhealth.connect.envelope.IntegrationEnvelopeTest.xml
+    implementationRecord: docs/roadmap/phase-1-p1-0201-implementation.md
     evidence: evidence/R0.2/G3
     owner: runtime-engineering
   - requirement: FR-EVT-004

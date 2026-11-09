@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:hhc:schema:integration-envelope:v1",
+  "title": "HHC Integration Envelope v1 identity core",
+  "description": "Technical identity, scope, causation, Flow and receive-time core delivered by P1-0201. It contains no clinical payload or patient identifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "envelopeVersion",
+    "messageId",
+    "correlationId",
+    "scope",
+    "processing",
+    "time"
+  ],
+  "properties": {
+    "envelopeVersion": {
+      "const": "hhc-envelope/v1"
+    },
+    "messageId": {
+      "$ref": "#/$defs/messageId"
+    },
+    "correlationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~:/@+\\-]{0,127}$"
+    },
+    "causationId": {
+      "$ref": "#/$defs/messageId"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "facilityId"],
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "pattern": "^t-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "not": {
+            "const": "t-00000000-0000-0000-0000-000000000000"
+          }
+        },
+        "facilityId": {
+          "type": "string",
+          "pattern": "^f-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "not": {
+            "const": "f-00000000-0000-0000-0000-000000000000"
+          }
+        }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flowId", "flowVersion"],
+      "properties": {
+        "flowId": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 69,
+          "pattern": "^flow-[a-z0-9](?:[a-z0-9._\\-]{0,62}[a-z0-9])?$"
+        },
+        "flowVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._+:\\-]{0,126}[A-Za-z0-9])?$",
+          "not": {
+            "pattern": "^(?:[Ll][Aa][Tt][Ee][Ss][Tt]|[Cc][Uu][Rr][Rr][Ee][Nn][Tt]|[Hh][Ee][Aa][Dd]|[Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])$"
+          }
+        }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receivedAt"],
+      "properties": {
+        "receivedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "messageId": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

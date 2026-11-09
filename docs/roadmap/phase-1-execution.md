@@ -211,7 +211,7 @@ Dipendenze: G1; usa gli scope definiti da WP1-01. Effort: 45–65 giorni/persona
 
 Attività:
 
-- P1-0201: completare Envelope v1 con message, correlation, causation, tenant, facility, flow e schema version;
+- P1-0201: **IMPLEMENTED** — identity core `hhc-envelope/v1` immutabile con message UUID URN, correlation bounded, causation opzionale non autoreferenziale, scope Tenant/Facility tipizzato, Flow/version pin-nati, receive `Instant`, JSON Schema con digest e gate CI; evidenza in [phase-1-p1-0201-implementation.md](phase-1-p1-0201-implementation.md);
 - P1-0202: calcolare checksum su byte originali e conservarne algoritmo/versione;
 - P1-0203: implementare raw object store immutabile con metadata, retention class e content type;
 - P1-0204: separare raw reference dal metadata operativo nel Platform DB/ledger;
